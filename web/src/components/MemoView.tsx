@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { BookmarkIcon, MessageCircleMoreIcon, ImageIcon } from "lucide-react";
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { PhotoProvider } from "react-photo-view";
 import { Link, useLocation } from "react-router-dom";
 import Tooltip from "@/components/ui/Tooltip";
@@ -19,6 +19,7 @@ import { isSuperUser } from "@/utils/user";
 import ExportModal from "./ExportModal";
 import MemoActionMenu from "./MemoActionMenu";
 import MemoContent from "./MemoContent";
+import { excludeReferencedResources } from "./MemoContent/markdown/resourceReferences";
 import MemoEditor from "./MemoEditor";
 import MemoLocationView from "./MemoLocationView";
 import MemoReactionistView from "./MemoReactionListView";
@@ -62,6 +63,11 @@ const MemoView: React.FC<Props> = (props: Props) => {
     workspaceSettingStore.getWorkspaceSettingByKey(WorkspaceSettingKey.MEMO_RELATED).memoRelatedSetting ||
     WorkspaceMemoRelatedSetting.fromPartial({});
   const referencedMemos = memo.relations.filter((relation) => relation.type === MemoRelation_Type.REFERENCE);
+  // Resources the content references are inline images; only the rest are listed as attachments.
+  const attachments = useMemo(
+    () => excludeReferencedResources(memo.resources, memo.content, window.location.origin),
+    [memo.resources, memo.content],
+  );
   const commentAmount = memo.relations.filter(
     (relation) => relation.type === MemoRelation_Type.COMMENT && relation.relatedMemo?.name === memo.name,
   ).length;
@@ -313,7 +319,7 @@ const MemoView: React.FC<Props> = (props: Props) => {
               disablePhotoProvider
             />
             {memo.location && <MemoLocationView location={memo.location} />}
-            <MemoResourceListView resources={memo.resources} />
+            <MemoResourceListView resources={attachments} />
           </PhotoProvider>
           <MemoRelationListView memo={memo} relations={referencedMemos} parentPage={parentPage} />
           <MemoReactionistView memo={memo} reactions={memo.reactions} disabled={workspaceMemoRelatedSetting.disableReactions} />

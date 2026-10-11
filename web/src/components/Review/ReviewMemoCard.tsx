@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { SquarePenIcon } from "lucide-react";
 import { PhotoProvider } from "react-photo-view";
 import MemoContent from "@/components/MemoContent";
+import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
 import MemoLocationView from "@/components/MemoLocationView";
 import MemoReactionListView from "@/components/MemoReactionListView";
 import MemoRelationListView from "@/components/MemoRelationListView";
@@ -26,6 +27,7 @@ const ReviewMemoCard = ({ memo, onEdit, dateDisplay = "date", className, headerS
   const formatTime = (date: Date) =>
     dateDisplay === "time" ? date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }) : formatMemoDate(date, locale);
   const referencedMemos = memo.relations.filter((relation) => relation.type === MemoRelation_Type.REFERENCE);
+  const attachments = excludeReferencedResources(memo.resources, memo.content, window.location.origin);
 
   return (
     <div
@@ -58,9 +60,9 @@ const ReviewMemoCard = ({ memo, onEdit, dateDisplay = "date", className, headerS
         <PhotoProvider>
           <MemoContent memoName={memo.name} nodes={memo.nodes} disablePhotoProvider />
           {memo.location && <MemoLocationView location={memo.location} />}
-          {memo.resources.length > 0 && (
+          {attachments.length > 0 && (
             <div className="mt-2">
-              <MemoResourceListView resources={memo.resources} />
+              <MemoResourceListView resources={attachments} />
             </div>
           )}
         </PhotoProvider>

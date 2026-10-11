@@ -8,6 +8,7 @@ import useNavigateTo from "@/hooks/useNavigateTo";
 import { useMemoStore } from "@/store/v1";
 import { useTranslate } from "@/utils/i18n";
 import MemoContent from "..";
+import { excludeReferencedResources } from "../markdown/resourceReferences";
 import { RendererContext } from "../types";
 import Error from "./Error";
 
@@ -62,7 +63,7 @@ const EmbeddedMemo = ({ resourceId: uid, params: paramsStr }: Props) => {
         nodes={memo.nodes}
         embeddedMemos={context.embeddedMemos}
       />
-      <MemoResourceListView resources={memo.resources} />
+      <MemoResourceListView resources={excludeReferencedResources(memo.resources, memo.content, window.location.origin)} />
     </>
   );
   if (inlineMode) {
