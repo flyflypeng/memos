@@ -4,7 +4,7 @@
 
 **被阻塞于：** 10
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 删除引用并保存：本 Memo 的资源由服务端现有 SetMemoResources 语义删除；仍无主的上传由客户端删除
 - [ ] 打开编辑器时就是附件的资源，只要还在附件列表中就保留
