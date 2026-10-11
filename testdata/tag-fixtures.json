@@ -1,0 +1,18 @@
+[
+  {"name": "plain tag", "content": "hello #work", "tags": ["work"]},
+  {"name": "chinese tag", "content": "今天 #读书 笔记", "tags": ["读书"]},
+  {"name": "nested path tag", "content": "#project/memos/web done", "tags": ["project/memos/web"]},
+  {"name": "tag at end of line", "content": "line one #alpha\nline two #beta", "tags": ["alpha", "beta"]},
+  {"name": "ascii punctuation is part of the tag (gomark rule)", "content": "see #todo, then #done. and #ok!", "tags": ["todo,", "done.", "ok!"]},
+  {"name": "CJK punctuation is part of the tag (gomark rule)", "content": "记得 #待办，然后 #完成。", "tags": ["待办，然后", "完成。"]},
+  {"name": "hash in inline code", "content": "use `#notatag` here #real", "tags": ["real"]},
+  {"name": "hash in code block", "content": "```\n#notatag\n```\n#real", "tags": ["real"]},
+  {"name": "hash in URL fragment", "content": "https://example.com/page#section", "tags": []},
+  {"name": "hash in markdown link URL", "content": "[docs](https://example.com/#anchor) #linked", "tags": ["linked"]},
+  {"name": "heading is not a tag", "content": "# Heading\n## Sub", "tags": []},
+  {"name": "tag inside heading", "content": "# Title #inhead", "tags": ["inhead"]},
+  {"name": "consecutive tags", "content": "#a #b #c", "tags": ["a", "b", "c"]},
+  {"name": "adjacent tags without space", "content": "#one#two", "tags": ["one", "two"]},
+  {"name": "duplicate tags", "content": "#dup and #dup", "tags": ["dup"]},
+  {"name": "lone hash", "content": "price # 5", "tags": []}
+]
