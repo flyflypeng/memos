@@ -4,7 +4,7 @@
 
 **被阻塞于：** 无（可立即开始）
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] `web/` 有 `test` 脚本，vitest + jsdom + @testing-library/react 可运行，并有一个真实的渲染断言示例
 - [ ] 共享标签样例覆盖：普通标签、中文标签、嵌套路径标签、行尾和标点结尾、代码块和行内代码中的 `#`、URL 片段中的 `#`、`# 标题`、连续标签

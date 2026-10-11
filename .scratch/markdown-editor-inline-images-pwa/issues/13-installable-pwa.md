@@ -4,7 +4,7 @@
 
 **被阻塞于：** 无（可立即开始）
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] manifest 包含 `id`、`start_url`、`scope`、name/short_name「Memos」、description、`display: standalone`、background_color、theme_color，以及 192/512 的 any 和 maskable 图标；旧的静态 webmanifest 已删除
 - [ ] service worker 预缓存应用外壳；`/api/`、`/memos.api.v1.`、`/file/`、RSS 以及服务端渲染路由只走网络；导航回退到缓存的 `index.html`
