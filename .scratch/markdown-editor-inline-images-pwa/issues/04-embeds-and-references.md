@@ -4,7 +4,7 @@
 
 **被阻塞于：** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 嵌入 Memo 正确显示内容，自我嵌入和循环嵌入不会无限递归
 - [ ] `![[resources/uid]]` 能显示对应资源（修复前先复现旧问题，并记录在工单评论中）
