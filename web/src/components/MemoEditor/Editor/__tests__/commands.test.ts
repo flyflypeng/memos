@@ -2,7 +2,16 @@ import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, StateCommand } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
-import { continueMarkup, insertLink, insertTabSpaces, insertTextSpec, pasteUrlOverSelection, toggleWrap } from "../commands";
+import {
+  continueMarkup,
+  insertCodeBlock,
+  insertLink,
+  insertTabSpaces,
+  insertTextSpec,
+  pasteUrlOverSelection,
+  toggleLinePrefix,
+  toggleWrap,
+} from "../commands";
 import { memoCompletionSource, tagCompletionSource } from "../completions";
 
 // `|` marks the cursor; without it, `<` … `>` mark the selection.
@@ -141,5 +150,48 @@ describe("memo completion", () => {
   it("returns nothing without @", async () => {
     const source = memoCompletionSource(async () => [{ uid: "abc", label: "x" }], 0);
     expect(await complete(source, "see hel|")).toBeNull();
+  });
+});
+
+describe("format bar commands", () => {
+  it("toggleWrap with a placeholder selects it on an empty selection", () => {
+    expect(run(toggleWrap("~~", "text"), "a |").result).toBe("a ~~<text>~~");
+    expect(run(toggleWrap("$", "x^2"), "|").result).toBe("$<x^2>$");
+  });
+
+  it("toggleWrap with a placeholder still wraps and unwraps a selection", () => {
+    expect(run(toggleWrap("~~", "text"), "a <b> c").result).toBe("a ~~<b>~~ c");
+    expect(run(toggleWrap("~~", "text"), "a ~~<b>~~ c").result).toBe("a <b> c");
+    expect(run(toggleWrap("`", "code"), "<x>").result).toBe("`<x>`");
+  });
+
+  it.each([
+    ["quote", "|", "> |"],
+    ["quote", "ab|c", "> ab|c"],
+    ["quote", "> ab|c", "ab|c"],
+    ["bullet", "<a\nb>", "<- a\n- b>"],
+    ["bullet", "- <a\n- b>", "<a\nb>"],
+    ["ordered", "<a\nb\nc>", "<1. a\n2. b\n3. c>"],
+    ["ordered", "1. <a\n2. b>", "<a\nb>"],
+    ["ordered", "- <a\n- b>", "1. <a\n2. b>"],
+    ["task", "x|", "- [ ] x|"],
+    ["task", "- x|", "- [ ] x|"],
+    ["task", "- [x] x|", "x|"],
+    ["bullet", "  - x|", "  x|"],
+    ["heading", "title|", "## title|"],
+    ["heading", "## title|", "title|"],
+    ["heading", "# title|", "## title|"],
+    ["quote", "<a\n\nb>", "<> a\n\n> b>"],
+  ] as const)("toggleLinePrefix(%s) %j → %j", (kind, input, expected) => {
+    expect(run(toggleLinePrefix(kind), input)).toEqual({ handled: true, result: expected });
+  });
+
+  it.each([
+    ["|", "```\n|\n```"],
+    ["text|", "text\n```\n|\n```"],
+    ["<a\nb>", "```\n<a\nb>\n```"],
+    ["x <a> y", "x \n```\n<a>\n```\n y"],
+  ])("insertCodeBlock %j → %j", (input, expected) => {
+    expect(run(insertCodeBlock, input).result).toBe(expected);
   });
 });

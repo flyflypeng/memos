@@ -6,6 +6,7 @@ import { CalendarClockIcon, LoaderIcon, SendIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import useLocalStorage from "react-use/lib/useLocalStorage";
+import MemoContent from "@/components/MemoContent";
 import { excludeReferencedResources, extractResourceReferences } from "@/components/MemoContent/markdown/resourceReferences";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
@@ -38,6 +39,7 @@ import {
   takeUploadAnchor,
   uploadInlineImages,
 } from "./Editor/inlineImages";
+import FormatBar from "./FormatBar";
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
@@ -93,6 +95,8 @@ const MemoEditor = (props: Props) => {
   const [zenModeOpen, setZenModeOpen] = useState(false);
   const editorRef = useRef<EditorRefActions>(null);
   const [content, setContent] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   // The Memo as the editor opened it (empty for a new Memo) and everything uploaded since; both feed
   // the save-time resource decision.
   const originalRef = useRef<ReconcileInput["original"]>({ content: "", resources: [] });
@@ -516,6 +520,16 @@ const MemoEditor = (props: Props) => {
     }
   };
 
+  const handleContainerBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+  };
+
+  const handlePreviewChange = (preview: boolean) => {
+    setPreviewing(preview);
+    // The editor stays mounted (hidden) while previewing, so its content and selection survive.
+    if (!preview) setTimeout(() => editorRef.current?.focus());
+  };
+
   const allowSave =
     (hasContent || state.resourceList.length > 0) && !state.isUploadingResource && inlineUploadCount === 0 && !state.isRequesting;
 
@@ -559,11 +573,26 @@ const MemoEditor = (props: Props) => {
           onKeyDown={handleKeyDown}
           onDrop={handleDropEvent}
           onFocus={handleContainerFocus}
+          onFocusCapture={() => setFocused(true)}
+          onBlur={handleContainerBlur}
         >
           {enableZenMode && <ZenModeButton isZenMode={isZenMode} onClick={isZenMode ? onZenModeClose! : handleOpenZenMode} />}
+          {(isZenMode || focused || previewing) && (
+            <FormatBar
+              className={clsx(enableZenMode && "pr-10")}
+              getView={() => editorRef.current?.getEditor() ?? null}
+              previewing={previewing}
+              onPreviewChange={handlePreviewChange}
+            />
+          )}
+          {previewing && (
+            <div className={clsx("w-full px-3 py-2 overflow-y-auto", isZenMode ? "zen-mode-editor-inner" : "max-h-[50vh]")}>
+              <MemoContent content={content} readonly />
+            </div>
+          )}
           <Editor
             ref={editorRef}
-            className={isZenMode ? "zen-mode-editor-inner" : undefined}
+            className={clsx(isZenMode && "zen-mode-editor-inner", previewing && "!hidden")}
             contentClassName={clsx(enableZenMode && "pr-8")}
             initialContent=""
             placeholder={props.placeholder ?? t("editor.any-thoughts")}
