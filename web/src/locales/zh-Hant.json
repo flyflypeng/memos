@@ -118,6 +118,20 @@
       "divider": "分隔線",
       "embed-memo": "嵌入 Memo",
       "upload-image": "上傳圖片"
+    },
+    "format": {
+      "heading": "標題",
+      "bold": "粗體",
+      "italic": "斜體",
+      "strikethrough": "刪除線",
+      "quote": "引用",
+      "bullet-list": "無序清單",
+      "ordered-list": "有序清單",
+      "task": "任務",
+      "inline-code": "行內程式碼",
+      "code-block": "程式碼區塊",
+      "link": "連結",
+      "math": "公式"
     }
   },
   "inbox": {

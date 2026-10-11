@@ -28,10 +28,10 @@ export const insertTextSpec = (state: EditorState, text = "", prefix = "", suffi
 /**
  * Wraps the selection with `delimiter`, or removes it when the selection (or the text right
  * around it) is already wrapped. With an empty selection, inserts a delimiter pair and puts the
- * cursor between them. The inner text stays selected.
+ * cursor between them, or `placeholder` selected between them. The inner text stays selected.
  */
 export const toggleWrap =
-  (delimiter: string): StateCommand =>
+  (delimiter: string, placeholder = ""): StateCommand =>
   ({ state, dispatch }) => {
     const len = delimiter.length;
     const { from, to } = state.selection.main;
@@ -67,10 +67,11 @@ export const toggleWrap =
       return true;
     }
 
+    const inner = selected || placeholder;
     dispatch(
       state.update({
-        changes: { from, to, insert: delimiter + selected + delimiter },
-        selection: EditorSelection.range(from + len, to + len),
+        changes: { from, to, insert: delimiter + inner + delimiter },
+        selection: EditorSelection.range(from + len, from + len + inner.length),
         userEvent: "input",
       }),
     );
@@ -155,4 +156,77 @@ export const tableSkeleton = (rows: number, cols: number): TableSkeleton => {
   const empty = row("   ");
   const lines = [empty, row("---"), ...Array.from({ length: Math.max(rows - 1, 0) }, () => empty)];
   return { text: lines.join("\n"), cursor: 2 };
+};
+
+export type LinePrefixKind = "heading" | "quote" | "bullet" | "ordered" | "task";
+
+const INDENT = /^\s*/;
+// Any block marker that a line-prefix toggle replaces: quote, heading, bullet/ordered list, task box.
+const ANY_LIST_MARKER = /^(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?/;
+const LINE_PREFIX: Record<LinePrefixKind, { active: RegExp; replaces: RegExp; marker: (index: number) => string; indent: boolean }> = {
+  heading: { active: /^##\s+/, replaces: /^#{1,6}\s+/, marker: () => "## ", indent: false },
+  quote: { active: />\s?/y, replaces: />\s?/y, marker: () => "> ", indent: false },
+  bullet: { active: /^[-*+]\s+(?!\[[ xX]\])/, replaces: ANY_LIST_MARKER, marker: () => "- ", indent: true },
+  ordered: { active: /^\d+[.)]\s+/, replaces: ANY_LIST_MARKER, marker: (i) => `${i + 1}. `, indent: true },
+  task: { active: /^[-*+]\s+\[[ xX]\]\s+/, replaces: ANY_LIST_MARKER, marker: () => "- [ ] ", indent: true },
+};
+
+/**
+ * Toggles a block prefix on every non-blank line touched by the selection (all blank lines count
+ * when nothing else is selected). When every line already has it, the prefix is removed; otherwise
+ * it is added, replacing another marker of the same family (`- x` → `1. x`, `# t` → `## t`).
+ */
+export const toggleLinePrefix =
+  (kind: LinePrefixKind): StateCommand =>
+  ({ state, dispatch }) => {
+    const spec = LINE_PREFIX[kind];
+    const { from, to } = state.selection.main;
+    const first = state.doc.lineAt(from).number;
+    const last = state.doc.lineAt(to).number;
+    let lines = Array.from({ length: last - first + 1 }, (_, i) => state.doc.line(first + i));
+    if (lines.some((line) => line.text.trim())) lines = lines.filter((line) => line.text.trim());
+
+    const parse = (text: string) => {
+      const indent = spec.indent ? INDENT.exec(text)![0] : "";
+      const rest = text.slice(indent.length);
+      const match = (re: RegExp) => {
+        re.lastIndex = 0;
+        const m = re.exec(rest);
+        return m && m.index === 0 ? m[0] : "";
+      };
+      return { indent, active: match(spec.active), replaced: match(spec.replaces) };
+    };
+    const parsed = lines.map((line) => parse(line.text));
+    const remove = parsed.every((p) => p.active);
+    const changes = lines.map((line, i) => {
+      const { indent, active, replaced } = parsed[i];
+      const start = line.from + indent.length;
+      return remove ? { from: start, to: start + active.length } : { from: start, to: start + replaced.length, insert: spec.marker(i) };
+    });
+    const changeSet = state.changes(changes);
+    const selection =
+      from === to
+        ? EditorSelection.cursor(changeSet.mapPos(from, 1))
+        : EditorSelection.range(changeSet.mapPos(from, -1), changeSet.mapPos(to, 1));
+    dispatch(state.update({ changes: changeSet, selection, scrollIntoView: true, userEvent: "input" }));
+    return true;
+  };
+
+/** Wraps the selection (or an empty line for the cursor) in a fenced code block on its own lines. */
+export const insertCodeBlock: StateCommand = ({ state, dispatch }) => {
+  const { from, to } = state.selection.main;
+  const before = from === state.doc.lineAt(from).from ? "" : "\n";
+  const after = to === state.doc.lineAt(to).to ? "" : "\n";
+  const open = `${before}\`\`\`\n`;
+  const insert = `${open}${state.sliceDoc(from, to)}\n\`\`\`${after}`;
+  const start = from + open.length;
+  dispatch(
+    state.update({
+      changes: { from, to, insert },
+      selection: EditorSelection.range(start, start + to - from),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
 };

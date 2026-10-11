@@ -118,6 +118,20 @@
       "divider": "区切り線",
       "embed-memo": "メモを埋め込む",
       "upload-image": "画像をアップロード"
+    },
+    "format": {
+      "heading": "見出し",
+      "bold": "太字",
+      "italic": "斜体",
+      "strikethrough": "取り消し線",
+      "quote": "引用",
+      "bullet-list": "箇条書き",
+      "ordered-list": "番号付きリスト",
+      "task": "タスク",
+      "inline-code": "インラインコード",
+      "code-block": "コードブロック",
+      "link": "リンク",
+      "math": "数式"
     }
   },
   "inbox": {

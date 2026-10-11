@@ -123,6 +123,20 @@
       "divider": "Divider",
       "embed-memo": "Embed memo",
       "upload-image": "Upload image"
+    },
+    "format": {
+      "heading": "Heading",
+      "bold": "Bold",
+      "italic": "Italic",
+      "strikethrough": "Strikethrough",
+      "quote": "Quote",
+      "bullet-list": "Bulleted list",
+      "ordered-list": "Numbered list",
+      "task": "Task",
+      "inline-code": "Inline code",
+      "code-block": "Code block",
+      "link": "Link",
+      "math": "Formula"
     }
   },
   "inbox": {
