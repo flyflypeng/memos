@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { codeInspectorPlugin } from "code-inspector-plugin";
 import { resolve } from "path";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // let devProxyServer = "https://memo.chriscurry.cc";
 let devProxyServer = "http://localhost:8081";
@@ -20,6 +21,47 @@ export default defineConfig({
       codeInspectorPlugin({
         bundler: "vite",
       }),
+    VitePWA({
+      registerType: "prompt",
+      injectRegister: false,
+      manifestFilename: "manifest.webmanifest",
+      includeAssets: ["logo.webp", "apple-touch-icon.png"],
+      manifest: {
+        id: "/",
+        start_url: "/",
+        scope: "/",
+        name: "Memos",
+        short_name: "Memos",
+        description: "A privacy-first, lightweight note-taking service. Capture your thoughts quickly.",
+        display: "standalone",
+        background_color: "#f4f4f5",
+        theme_color: "#f4f4f5",
+        icons: [
+          { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/maskable-192x192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,webp,png,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        navigateFallback: "/index.html",
+        // Network-only: API, gRPC-web, resource files, RSS and server-rendered routes.
+        navigateFallbackDenylist: [/^\/api\//, /^\/memos\.api\.v1\./, /^\/file\//, /rss\.xml$/, /^\/healthz/],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/api/") ||
+              url.pathname.startsWith("/memos.api.v1.") ||
+              url.pathname.startsWith("/file/") ||
+              url.pathname.endsWith("rss.xml") ||
+              url.pathname.startsWith("/healthz"),
+            handler: "NetworkOnly",
+          },
+        ],
+      },
+    }),
   ],
   server: {
     host: "0.0.0.0",

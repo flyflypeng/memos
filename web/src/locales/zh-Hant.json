@@ -10,6 +10,10 @@
   "calendar": {
     "back-to-current-month": "返回當前月份"
   },
+  "pwa": {
+    "new-version-available": "有新版本可用。",
+    "refresh": "重新整理"
+  },
   "common": {
     "about": "關於",
     "review": "回顧",
@@ -97,7 +101,22 @@
     "add-your-comment-here": "在這裡添加您的評論...",
     "any-thoughts": "任何想法...",
     "save": "儲存",
-    "preserve-update-time": "保留更新時間"
+    "preserve-update-time": "保留更新時間",
+    "slash": {
+      "heading-1": "一級標題",
+      "heading-2": "二級標題",
+      "heading-3": "三級標題",
+      "bullet-list": "無序清單",
+      "ordered-list": "有序清單",
+      "task-list": "任務清單",
+      "quote": "引用",
+      "code-block": "程式碼區塊",
+      "table": "表格",
+      "math-block": "公式區塊",
+      "mermaid": "Mermaid 圖表",
+      "divider": "分隔線",
+      "embed-memo": "嵌入 Memo"
+    }
   },
   "inbox": {
     "memo-comment": "{{user}} 對您的 {{memo}} 發表了評論。",

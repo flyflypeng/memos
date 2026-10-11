@@ -48,11 +48,27 @@ func (*FrontendService) Serve(_ context.Context, e *echo.Echo) {
 	}))
 
 	// Route to serve the main app with HTML5 fallback for SPA behavior.
-	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+	e.Use(noCacheMiddleware, middleware.StaticWithConfig(middleware.StaticConfig{
 		Filesystem: getFileSystem("dist"),
 		HTML5:      true, // Enable fallback to index.html
 		Skipper:    skipper,
 	}))
+}
+
+// noCachePaths must always be revalidated so browsers detect new PWA releases.
+var noCachePaths = map[string]bool{
+	"/sw.js":                true,
+	"/registerSW.js":        true,
+	"/manifest.webmanifest": true,
+}
+
+func noCacheMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if noCachePaths[c.Request().URL.Path] {
+			c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
+		}
+		return next(c)
+	}
 }
 
 func getFileSystem(path string) http.FileSystem {

@@ -4,7 +4,7 @@
 
 **被阻塞于：** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Markdown 语法高亮，代码块按语言高亮，浅色和深色主题与现有界面一致
 - [ ] `#` 标签补全与 `@` Memo 补全（插入 `![[memos/uid]]`）照旧可用

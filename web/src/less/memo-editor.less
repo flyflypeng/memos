@@ -1,0 +1,162 @@
+// CodeMirror Memo editor. Colors follow the existing editor (zinc/gray) and highlight.less palettes.
+.memo-editor-cm {
+  .cm-editor {
+    @apply w-full h-full bg-transparent text-sm;
+    min-height: 3rem;
+    max-height: inherit;
+
+    &.cm-focused {
+      outline: none;
+    }
+  }
+
+  .cm-scroller {
+    @apply overflow-x-hidden overflow-y-auto leading-normal;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    font-family: inherit;
+  }
+
+  .cm-content {
+    @apply p-3 pb-0 caret-current;
+  }
+
+  .cm-line {
+    @apply p-0 break-words;
+  }
+
+  .cm-placeholder {
+    @apply text-gray-400 dark:text-gray-500;
+  }
+
+  .cm-selectionBackground {
+    @apply bg-blue-100 dark:bg-zinc-600 !important;
+  }
+  &.pr-8 .cm-content {
+    padding-right: 2rem;
+  }
+
+  // Markdown tokens (classHighlighter).
+  .tok-heading {
+    @apply font-semibold;
+  }
+  .tok-strong {
+    @apply font-bold;
+  }
+  .tok-emphasis {
+    @apply italic;
+  }
+  .tok-strikethrough {
+    @apply line-through;
+  }
+  .tok-link,
+  .tok-url {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+  .tok-meta,
+  .tok-processingInstruction {
+    @apply text-gray-400 dark:text-gray-500;
+  }
+  .tok-monospace {
+    @apply font-mono;
+  }
+  .tok-quote {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  // Code tokens inside fenced blocks (github / atom-one-dark palette).
+  .tok-keyword {
+    color: #d73a49;
+    .dark & {
+      color: #c678dd;
+    }
+  }
+  .tok-string,
+  .tok-string2 {
+    color: #032f62;
+    .dark & {
+      color: #98c379;
+    }
+  }
+  .tok-number,
+  .tok-bool,
+  .tok-atom {
+    color: #005cc5;
+    .dark & {
+      color: #d19a66;
+    }
+  }
+  .tok-comment {
+    @apply italic;
+    color: #6a737d;
+    .dark & {
+      color: #5c6370;
+    }
+  }
+  .tok-variableName.tok-definition,
+  .tok-typeName,
+  .tok-className {
+    color: #6f42c1;
+    .dark & {
+      color: #e6c07b;
+    }
+  }
+  .tok-propertyName {
+    color: #005cc5;
+    .dark & {
+      color: #61afef;
+    }
+  }
+  .tok-operator {
+    color: #d73a49;
+    .dark & {
+      color: #56b6c2;
+    }
+  }
+}
+
+.zen-mode-editor-inner.memo-editor-cm {
+  .cm-editor {
+    @apply flex-1 text-base;
+    min-height: 100%;
+  }
+  .cm-scroller {
+    @apply leading-relaxed;
+  }
+  .cm-content {
+    padding-left: 1rem;
+    padding-bottom: 0;
+
+    @media (max-width: 639px) {
+      padding-bottom: 4rem;
+    }
+  }
+}
+
+// Autocomplete popup, matching the former tag/memo suggestion popovers.
+.cm-tooltip.cm-tooltip-autocomplete {
+  @apply p-1 mt-1 rounded border-none shadow bg-zinc-100 dark:bg-zinc-700;
+
+  > ul {
+    @apply max-h-56;
+    max-width: 18rem;
+    font-family: inherit;
+
+    > li {
+      @apply rounded p-1 px-2 text-sm dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis;
+
+      &[aria-selected] {
+        @apply bg-zinc-300 dark:bg-zinc-600 text-inherit;
+      }
+    }
+  }
+
+  .cm-completionDetail {
+    @apply block not-italic text-xs text-gray-400 ml-0;
+  }
+  .cm-completionLabel {
+    @apply block whitespace-normal line-clamp-2;
+  }
+}

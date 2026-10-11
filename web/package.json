@@ -11,6 +11,13 @@
     "postinstall": "cd ../proto && buf generate"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.14",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -18,6 +25,7 @@
     "@emotion/styled": "^11.14.0",
     "@giscus/react": "^3.1.0",
     "@github/relative-time-element": "^4.4.4",
+    "@lezer/highlight": "^1.2.5",
     "@matejmazur/react-katex": "^3.1.3",
     "@mui/joy": "5.0.0-beta.51",
     "@radix-ui/react-popover": "^1.1.4",
@@ -65,7 +73,6 @@
     "tailwind-scrollbar-hide": "^2.0.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "textarea-caret": "^3.1.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0",
     "uuid": "^11.0.3",
@@ -89,7 +96,6 @@
     "@types/qs": "^6.9.17",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/textarea-caret": "^3.0.3",
     "@types/unist": "^3.0.3",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -111,6 +117,8 @@
     "protobufjs": "^7.4.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
-    "vitest": "^3"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^3",
+    "workbox-window": "^7.4.1"
   }
 }

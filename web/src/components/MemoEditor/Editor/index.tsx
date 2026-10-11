@@ -1,10 +1,19 @@
+import { EditorSelection, EditorState, Transaction } from "@codemirror/state";
+import { EditorView, placeholder as placeholderExt } from "@codemirror/view";
 import clsx from "clsx";
-import { forwardRef, ReactNode, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import MemoSuggestions from "./MemoSuggestions";
-import TagSuggestions from "./TagSuggestions";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { memoServiceClient } from "@/grpcweb";
+import useCurrentUser from "@/hooks/useCurrentUser";
+import { useMemoTagList } from "@/store/v1";
+import { MemoView } from "@/types/proto/api/v1/memo_service";
+import { useTranslate } from "@/utils/i18n";
+import { insertTextSpec } from "./commands";
+import { memoCompletionSource, tagCompletionSource } from "./completions";
+import { createEditorExtensions, placeholderCompartment } from "./extensions";
+import { embedMemoItem, slashBlockItems, slashCompletionSource } from "./slashCommands";
 
 export interface EditorRefActions {
-  getEditor: () => HTMLTextAreaElement | null;
+  getEditor: () => EditorView | null;
   focus: FunctionType;
   scrollToCursor: FunctionType;
   insertText: (text: string, prefix?: string, suffix?: string) => void;
@@ -21,189 +30,152 @@ export interface EditorRefActions {
 
 interface Props {
   className?: string;
-  textareaClassName?: string;
+  contentClassName?: string;
   initialContent: string;
   placeholder: string;
-  tools?: ReactNode;
+  markdownShortcutsEnabled: boolean;
   onContentChange: (content: string) => void;
-  onPaste: (event: React.ClipboardEvent) => void;
+  /** Return true when the paste was handled; CodeMirror then skips its default insertion. */
+  onPaste: (event: ClipboardEvent, view: EditorView) => boolean;
 }
 
 const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<EditorRefActions>) {
-  const { className, textareaClassName, initialContent, placeholder, onPaste, onContentChange: handleContentChangeCallback } = props;
-  const [isInIME, setIsInIME] = useState(false);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const { className, contentClassName, initialContent, placeholder } = props;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const t = useTranslate();
+  // Extensions are built once; they read the latest props/data through this ref.
+  const latest = useRef({ props, tags: [] as string[], userName: "", t });
+  latest.current.props = props;
+  latest.current.t = t;
+  latest.current.tags = Object.entries(useMemoTagList())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag]) => tag);
+  latest.current.userName = useCurrentUser()?.name ?? "";
 
   useEffect(() => {
-    if (editorRef.current && initialContent) {
-      editorRef.current.value = initialContent;
-      handleContentChangeCallback(initialContent);
-    }
+    const view = new EditorView({
+      parent: containerRef.current!,
+      state: EditorState.create({
+        doc: initialContent,
+        extensions: createEditorExtensions({
+          placeholder,
+          markdownShortcutsEnabled: () => latest.current.props.markdownShortcutsEnabled,
+          completionSources: [
+            tagCompletionSource(() => latest.current.tags),
+            memoCompletionSource(async (query) => {
+              const userName = latest.current.userName;
+              if (!userName) return [];
+              const filters = [`creator == "${userName}"`, `row_status == "NORMAL"`];
+              if (query) filters.push(`content_search == [${JSON.stringify(query)}]`);
+              const { memos } = await memoServiceClient.listMemos({
+                pageSize: 8,
+                filter: filters.join(" && "),
+                view: MemoView.MEMO_VIEW_FULL,
+              });
+              return memos.map((memo) => ({
+                uid: memo.uid,
+                label: (memo.snippet || memo.content.slice(0, 80)).replace(/\s+/g, " "),
+                detail: memo.createTime?.toLocaleString(),
+              }));
+            }),
+            slashCompletionSource(() => [
+              ...slashBlockItems((id) => latest.current.t(`editor.slash.${id}`)),
+              embedMemoItem(latest.current.t("editor.slash.embed-memo")),
+            ]),
+          ],
+          onDocChange: (content) => latest.current.props.onContentChange(content),
+          onPaste: (event, view) => latest.current.props.onPaste(event, view),
+          // Files dropped on the editor are uploaded by the MemoEditor container; keep CodeMirror
+          // from inserting their text content.
+          onDrop: (event) => {
+            if (!event.dataTransfer?.files.length) return false;
+            event.preventDefault();
+            return true;
+          },
+        }),
+      }),
+    });
+    viewRef.current = view;
+    if (initialContent) props.onContentChange(initialContent);
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
-    if (editorRef.current) {
-      updateEditorHeight();
-    }
-  }, [editorRef.current?.value]);
+    viewRef.current?.dispatch({ effects: placeholderCompartment.reconfigure(placeholderExt(placeholder)) });
+  }, [placeholder]);
 
-  const editorActions = {
-    getEditor: () => {
-      return editorRef.current;
-    },
-    focus: () => {
-      editorRef.current?.focus();
-    },
-    scrollToCursor: () => {
-      if (editorRef.current) {
-        editorRef.current.scrollTop = editorRef.current.scrollHeight;
-      }
-    },
-    insertText: (content = "", prefix = "", suffix = "") => {
-      if (!editorRef.current) {
-        return;
-      }
-
-      const textarea = editorRef.current;
-      const cursorPosition = textarea.selectionStart;
-      const endPosition = textarea.selectionEnd;
-      const prevValue = textarea.value;
-      const textToInsert = prefix + (content || textarea.value.slice(cursorPosition, endPosition)) + suffix;
-
-      const result = document.execCommand("insertText", false, textToInsert);
-      if (!result) {
-        editorRef.current.value = prevValue.slice(0, cursorPosition) + textToInsert + prevValue.slice(endPosition);
-      }
-
-      editorRef.current.focus();
-      editorRef.current.selectionEnd = endPosition + prefix.length + content.length;
-      handleContentChangeCallback(editorRef.current.value);
-      updateEditorHeight();
-    },
-    removeText: (start: number, length: number) => {
-      if (!editorRef.current) {
-        return;
-      }
-
-      const prevValue = editorRef.current.value;
-      const value = prevValue.slice(0, start) + prevValue.slice(start + length);
-      editorRef.current.value = value;
-      editorRef.current.focus();
-      editorRef.current.selectionEnd = start;
-      handleContentChangeCallback(editorRef.current.value);
-      updateEditorHeight();
-    },
-    setContent: (text: string) => {
-      if (editorRef.current) {
-        editorRef.current.value = text;
-        handleContentChangeCallback(editorRef.current.value);
-        updateEditorHeight();
-      }
-    },
-    getContent: (): string => {
-      return editorRef.current?.value ?? "";
-    },
-    getCursorPosition: (): number => {
-      return editorRef.current?.selectionStart ?? 0;
-    },
-    getSelectedContent: () => {
-      const start = editorRef.current?.selectionStart;
-      const end = editorRef.current?.selectionEnd;
-      return editorRef.current?.value.slice(start, end) ?? "";
-    },
-    setCursorPosition: (startPos: number, endPos?: number) => {
-      const _endPos = isNaN(endPos as number) ? startPos : (endPos as number);
-      editorRef.current?.setSelectionRange(startPos, _endPos);
-    },
-    getCursorLineNumber: () => {
-      const cursorPosition = editorRef.current?.selectionStart ?? 0;
-      const lines = editorRef.current?.value.slice(0, cursorPosition).split("\n") ?? [];
-      return lines.length - 1;
-    },
-    getLine: (lineNumber: number) => {
-      return editorRef.current?.value.split("\n")[lineNumber] ?? "";
-    },
-    setLine: (lineNumber: number, text: string) => {
-      const lines = editorRef.current?.value.split("\n") ?? [];
-      lines[lineNumber] = text;
-      if (editorRef.current) {
-        editorRef.current.value = lines.join("\n");
-        editorRef.current.focus();
-        handleContentChangeCallback(editorRef.current.value);
-        updateEditorHeight();
-      }
-    },
-  };
-
-  useImperativeHandle(ref, () => editorActions, []);
-
-  const updateEditorHeight = () => {
-    if (editorRef.current) {
-      editorRef.current.style.height = "auto";
-      editorRef.current.style.height = (editorRef.current.scrollHeight ?? 0) + "px";
-    }
-  };
-
-  const handleEditorInput = useCallback(() => {
-    handleContentChangeCallback(editorRef.current?.value ?? "");
-    updateEditorHeight();
+  useImperativeHandle(ref, () => {
+    const dispatch = (spec: Parameters<EditorView["dispatch"]>[0]) => viewRef.current?.dispatch(spec);
+    const state = () => viewRef.current?.state;
+    return {
+      getEditor: () => viewRef.current,
+      focus: () => viewRef.current?.focus(),
+      scrollToCursor: () => {
+        const view = viewRef.current;
+        if (view) view.dispatch({ effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "nearest" }) });
+      },
+      insertText: (text = "", prefix = "", suffix = "") => {
+        const view = viewRef.current;
+        if (!view) return;
+        view.dispatch(insertTextSpec(view.state, text, prefix, suffix));
+        view.focus();
+      },
+      removeText: (start: number, length: number) => {
+        dispatch({ changes: { from: start, to: start + length }, selection: EditorSelection.cursor(start), userEvent: "delete" });
+        viewRef.current?.focus();
+      },
+      setContent: (text: string) => {
+        const current = state();
+        if (!current) return;
+        // Loading content (draft, memo, reset) is not an edit the user should be able to undo.
+        dispatch({
+          changes: { from: 0, to: current.doc.length, insert: text },
+          selection: EditorSelection.cursor(text.length),
+          annotations: Transaction.addToHistory.of(false),
+        });
+      },
+      getContent: () => state()?.doc.toString() ?? "",
+      getSelectedContent: () => {
+        const current = state();
+        return current ? current.sliceDoc(current.selection.main.from, current.selection.main.to) : "";
+      },
+      getCursorPosition: () => state()?.selection.main.from ?? 0,
+      setCursorPosition: (startPos: number, endPos?: number) => {
+        dispatch({ selection: EditorSelection.range(startPos, isNaN(endPos as number) ? startPos : (endPos as number)) });
+      },
+      getCursorLineNumber: () => {
+        const current = state();
+        return current ? current.doc.lineAt(current.selection.main.from).number - 1 : 0;
+      },
+      getLine: (lineNumber: number) => {
+        const current = state();
+        if (!current || lineNumber < 0 || lineNumber >= current.doc.lines) return "";
+        return current.doc.line(lineNumber + 1).text;
+      },
+      setLine: (lineNumber: number, text: string) => {
+        const current = state();
+        if (!current || lineNumber < 0 || lineNumber >= current.doc.lines) return;
+        const line = current.doc.line(lineNumber + 1);
+        dispatch({ changes: { from: line.from, to: line.to, insert: text }, userEvent: "input" });
+        viewRef.current?.focus();
+      },
+    };
   }, []);
-
-  const handleEditorKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !isInIME) {
-      if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
-        return;
-      }
-
-      const cursorPosition = editorActions.getCursorPosition();
-      const prevContent = editorActions.getContent().substring(0, cursorPosition);
-      const lines = prevContent.split("\n");
-      const lastLine = lines[lines.length - 1];
-
-      // Detect list pattern from the last line using regex.
-      let marker = "";
-      const taskMatch = lastLine.match(/^(\s*[-*+]) \[[ x]\] \S/);
-      const ulMatch = lastLine.match(/^(\s*[-*+]) \S/);
-      const olMatch = lastLine.match(/^(\s*\d+)\. \S/);
-      if (taskMatch) {
-        marker = `${taskMatch[1]} [ ] `;
-      } else if (ulMatch) {
-        marker = `${ulMatch[1]} `;
-      } else if (olMatch) {
-        marker = `${olMatch[1].replace(/\d+$/, (n) => String(Number(n) + 1))}. `;
-      }
-
-      if (marker) {
-        event.preventDefault();
-        editorActions.insertText(`\n${marker}`);
-      }
-    }
-  };
 
   return (
     <div
+      ref={containerRef}
       className={clsx(
-        "flex flex-col justify-start items-start relative w-full h-auto max-h-[50vh] bg-inherit dark:text-gray-300",
+        "memo-editor-cm relative w-full h-auto max-h-[50vh] flex flex-col bg-inherit dark:text-gray-300",
         className,
+        contentClassName,
       )}
-    >
-      <textarea
-        className={clsx(
-          "p-3 pb-0 w-full h-full text-sm resize-none overflow-x-hidden overflow-y-auto bg-transparent outline-none whitespace-pre-wrap word-break scrollbar-hide",
-          textareaClassName,
-        )}
-        rows={2}
-        placeholder={placeholder}
-        ref={editorRef}
-        onPaste={onPaste}
-        onInput={handleEditorInput}
-        onKeyDown={handleEditorKeyDown}
-        onCompositionStart={() => setIsInIME(true)}
-        onCompositionEnd={() => setTimeout(() => setIsInIME(false))}
-      ></textarea>
-      <TagSuggestions editorRef={editorRef} editorActions={ref} />
-      <MemoSuggestions editorRef={editorRef} editorActions={ref} />
-    </div>
+    />
   );
 });
 

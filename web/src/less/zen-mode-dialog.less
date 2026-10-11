@@ -28,19 +28,6 @@
 
     .zen-mode-editor-inner {
       @apply flex-1 !max-h-none overflow-y-auto;
-
-      textarea {
-        @apply flex-1 text-base leading-relaxed;
-        padding-left: 1rem;
-        padding-bottom: 0;
-        height: auto !important;
-        min-height: 100% !important;
-
-        // Mobile: add bottom padding for fixed action bar
-        @media (max-width: 639px) {
-          padding-bottom: 4rem;
-        }
-      }
     }
 
     // Bottom action bar

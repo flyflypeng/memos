@@ -4,7 +4,7 @@
 
 **被阻塞于：** 13、14
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 所有栅格图标都由选定的 SVG 生成，不手工修改
 - [ ] maskable 图标的主体位于安全区内

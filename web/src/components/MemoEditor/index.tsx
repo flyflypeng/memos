@@ -1,16 +1,14 @@
+import { EditorView } from "@codemirror/view";
 import { Select, Option } from "@mui/joy";
 import clsx from "clsx";
 import { isEqual } from "lodash-es";
 import { CalendarClockIcon, LoaderIcon, SendIcon, XIcon } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { useTranslation } from "react-i18next";
 import useLocalStorage from "react-use/lib/useLocalStorage";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import { memoServiceClient } from "@/grpcweb";
-import { TAB_SPACE_WIDTH } from "@/helpers/consts";
-import { isValidUrl } from "@/helpers/utils";
 import useAsyncEffect from "@/hooks/useAsyncEffect";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoStore, useResourceStore, useUserStore, useWorkspaceSettingStore } from "@/store/v1";
@@ -30,10 +28,10 @@ import TagSelector from "./ActionButton/TagSelector";
 import UploadResourceButton from "./ActionButton/UploadResourceButton";
 import ZenModeButton from "./ActionButton/ZenModeButton";
 import Editor, { EditorRefActions } from "./Editor";
+import { pasteUrlOverSelection } from "./Editor/commands";
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
-import { handleEditorKeydownWithMarkdownShortcuts, hyperlinkHighlightedText } from "./handlers";
 import { MemoEditorContext } from "./types";
 
 export interface Props {
@@ -62,13 +60,11 @@ interface State {
   location: Location | undefined;
   isUploadingResource: boolean;
   isRequesting: boolean;
-  isComposing: boolean;
 }
 
 const MemoEditor = (props: Props) => {
   const { className, cacheKey, memoName, parentMemoName, autoFocus, enableZenMode, isZenMode, onZenModeClose, onConfirm, onCancel } = props;
   const t = useTranslate();
-  const { i18n } = useTranslation();
   const workspaceSettingStore = useWorkspaceSettingStore();
   const userStore = useUserStore();
   const memoStore = useMemoStore();
@@ -81,7 +77,6 @@ const MemoEditor = (props: Props) => {
     location: undefined,
     isUploadingResource: false,
     isRequesting: false,
-    isComposing: false,
   });
   const [hasContent, setHasContent] = useState<boolean>(false);
   const [preserveUpdateTime, setPreserveUpdateTime] = useState<boolean>(false);
@@ -142,20 +137,6 @@ const MemoEditor = (props: Props) => {
     }
   }, [memoName]);
 
-  const handleCompositionStart = () => {
-    setState((prevState) => ({
-      ...prevState,
-      isComposing: true,
-    }));
-  };
-
-  const handleCompositionEnd = () => {
-    setState((prevState) => ({
-      ...prevState,
-      isComposing: false,
-    }));
-  };
-
   const handleOpenZenMode = () => {
     if (!enableZenMode) return;
     setZenModeOpen(true);
@@ -177,36 +158,19 @@ const MemoEditor = (props: Props) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (!editorRef.current) {
+    // Formatting, Tab and list continuation are CodeMirror keymaps; only container-level keys here.
+    if (!editorRef.current || event.nativeEvent.isComposing || !(event.ctrlKey || event.metaKey) || event.key !== "Enter") {
       return;
     }
-
-    const isMetaKey = event.ctrlKey || event.metaKey;
-    if (isMetaKey) {
-      if (event.shiftKey && event.key === "Enter" && enableZenMode) {
+    if (event.shiftKey) {
+      if (enableZenMode) {
         event.preventDefault();
         isZenMode ? onZenModeClose?.() : handleOpenZenMode();
-        return;
-      }
-      if (event.key === "Enter") {
-        void handleSaveBtnClick();
-        return;
-      }
-      if (!workspaceMemoRelatedSetting.disableMarkdownShortcuts) {
-        handleEditorKeydownWithMarkdownShortcuts(event, editorRef.current);
-      }
-    }
-    if (event.key === "Tab" && !state.isComposing) {
-      event.preventDefault();
-      const tabSpace = " ".repeat(TAB_SPACE_WIDTH);
-      const cursorPosition = editorRef.current.getCursorPosition();
-      const selectedContent = editorRef.current.getSelectedContent();
-      editorRef.current.insertText(tabSpace);
-      if (selectedContent) {
-        editorRef.current.setCursorPosition(cursorPosition + TAB_SPACE_WIDTH);
       }
       return;
     }
+    event.preventDefault();
+    void handleSaveBtnClick();
   };
 
   const handleMemoVisibilityChange = (visibility: Visibility) => {
@@ -295,18 +259,17 @@ const MemoEditor = (props: Props) => {
     }
   };
 
-  const handlePasteEvent = async (event: React.ClipboardEvent) => {
+  const handlePasteEvent = (event: ClipboardEvent, view: EditorView): boolean => {
     if (event.clipboardData && event.clipboardData.files.length > 0) {
       event.preventDefault();
-      await uploadMultiFiles(event.clipboardData.files);
-    } else if (
-      editorRef.current != null &&
-      editorRef.current.getSelectedContent().length != 0 &&
-      isValidUrl(event.clipboardData.getData("Text"))
-    ) {
-      event.preventDefault();
-      hyperlinkHighlightedText(editorRef.current, event.clipboardData.getData("Text"));
+      void uploadMultiFiles(event.clipboardData.files);
+      return true;
     }
+    if (pasteUrlOverSelection(event.clipboardData?.getData("text/plain") ?? "")(view)) {
+      event.preventDefault();
+      return true;
+    }
+    return false;
   };
 
   const handleContentChange = (content: string) => {
@@ -421,18 +384,6 @@ const MemoEditor = (props: Props) => {
     }
   };
 
-  const editorConfig = useMemo(
-    () => ({
-      className: isZenMode ? "zen-mode-editor-inner" : undefined,
-      textareaClassName: clsx(enableZenMode && "pr-8"),
-      initialContent: "",
-      placeholder: props.placeholder ?? t("editor.any-thoughts"),
-      onContentChange: handleContentChange,
-      onPaste: handlePasteEvent,
-    }),
-    [i18n.language, isZenMode, enableZenMode],
-  );
-
   const allowSave = (hasContent || state.resourceList.length > 0) && !state.isUploadingResource && !state.isRequesting;
 
   return (
@@ -475,11 +426,18 @@ const MemoEditor = (props: Props) => {
           onKeyDown={handleKeyDown}
           onDrop={handleDropEvent}
           onFocus={handleContainerFocus}
-          onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
         >
           {enableZenMode && <ZenModeButton isZenMode={isZenMode} onClick={isZenMode ? onZenModeClose! : handleOpenZenMode} />}
-          <Editor ref={editorRef} {...editorConfig} />
+          <Editor
+            ref={editorRef}
+            className={isZenMode ? "zen-mode-editor-inner" : undefined}
+            contentClassName={clsx(enableZenMode && "pr-8")}
+            initialContent=""
+            placeholder={props.placeholder ?? t("editor.any-thoughts")}
+            markdownShortcutsEnabled={!workspaceMemoRelatedSetting.disableMarkdownShortcuts}
+            onContentChange={handleContentChange}
+            onPaste={handlePasteEvent}
+          />
           <ResourceListView resourceList={state.resourceList} setResourceList={handleSetResourceList} />
           <RelationListView relationList={referenceRelations} setRelationList={handleSetRelationList} />
           <div
