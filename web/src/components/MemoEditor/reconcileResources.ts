@@ -50,5 +50,4 @@ export const reconcileResources = (input: ReconcileInput): ReconcileOutput => {
 };
 
 // Cancelling an edit of an existing Memo: the uploads of this session that still belong to no Memo.
-export const cancelCleanup = (uploadedThisSession: Resource[]): Resource[] =>
-  uploadedThisSession.filter((resource) => !resource.memo);
+export const cancelCleanup = (uploadedThisSession: Resource[]): Resource[] => uploadedThisSession.filter((resource) => !resource.memo);
