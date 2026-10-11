@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="c-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="c-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="c-card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F3EEFF"/>
+    </linearGradient>
+    <linearGradient id="c-bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCD34D"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="c-icon-shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="c-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#2E1065" flood-opacity="0.35"/>
+    </filter>
+    <clipPath id="c-clip"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#c-bg)" filter="url(#c-icon-shadow)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#c-sheen)"/>
+  <g clip-path="url(#c-clip)">
+    <g filter="url(#c-soft)">
+      <path d="M 314 384 L 314 700 L 512 590 L 710 700 L 710 384" stroke="#FFFFFF" stroke-width="128" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.01"/>
+    </g>
+    <path d="M 314 384 L 314 700" stroke="#7434E4" stroke-width="152" stroke-linecap="round" fill="none"/><path d="M 314 384 L 314 700" stroke="#FFFFFF" stroke-width="128" stroke-linecap="round" fill="none"/>
+    <path d="M 314 384 L 512 590" stroke="#7434E4" stroke-width="152" stroke-linecap="round" fill="none"/><path d="M 314 384 L 512 590" stroke="#EDE9FE" stroke-width="128" stroke-linecap="round" fill="none"/>
+    <path d="M 710 384 L 710 700" stroke="#7434E4" stroke-width="152" stroke-linecap="round" fill="none"/><path d="M 710 384 L 710 700" stroke="#FFFFFF" stroke-width="128" stroke-linecap="round" fill="none"/>
+    <path d="M 512 590 L 710 384" stroke="#7434E4" stroke-width="152" stroke-linecap="round" fill="none"/><path d="M 512 590 L 710 384" stroke="#DDD6FE" stroke-width="128" stroke-linecap="round" fill="none"/>
+    <g transform="translate(772 254)">
+      <path d="M 0 -70 C 8 -22 22 -8 70 0 C 22 8 8 22 0 70 C -8 22 -22 8 -70 0 C -22 -8 -8 -22 0 -70 Z" transform="scale(1.25)" fill="url(#c-bolt)" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/>
+    </g>
+  </g>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="183.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3"/>
+</svg>
