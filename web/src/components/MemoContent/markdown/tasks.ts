@@ -29,9 +29,11 @@ export const removeCompletedTasks = (content: string): string => {
     return [lineStart, newline === -1 ? content.length : newline + 1] as const;
   });
   let result = content;
+  // Ranges don't overlap, so removing from the end keeps the earlier offsets valid.
   for (const [from, to] of ranges.reverse()) {
-    // The last line has no newline of its own, so drop the one that ends the line before it.
-    const lineBreakBefore = to === result.length && from > 0 ? (result[from - 2] === "\r" ? 2 : 1) : 0;
+    // A line that (now) ends the text has no newline of its own, so drop the one before it instead.
+    const endsText = result[to - 1] !== "\n";
+    const lineBreakBefore = endsText && from > 0 ? (result[from - 2] === "\r" ? 2 : 1) : 0;
     result = result.slice(0, from - lineBreakBefore) + result.slice(to);
   }
   return result;

@@ -58,6 +58,10 @@ describe("MemoActionMenu: remove completed tasks", () => {
     expect(await removeDone("- [ ] open\n- [x] done")).toBe("- [ ] open");
   });
 
+  it("removes several completed tasks at the end without leaving blank lines", async () => {
+    expect(await removeDone("Notes\n\n- [ ] open\n- [x] done one\n- [x] done two")).toBe("Notes\n\n- [ ] open");
+  });
+
   it("removes completed tasks in nested lists and blockquotes", async () => {
     const content = "- [ ] parent\n  - [x] child done\n  - [ ] child open\n\n> - [x] quoted done\n> - [ ] quoted open";
     expect(await removeDone(content)).toBe("- [ ] parent\n  - [ ] child open\n\n> - [ ] quoted open");
