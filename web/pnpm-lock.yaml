@@ -300,6 +300,9 @@ importers:
       long:
         specifier: ^5.2.3
         version: 5.2.3
+      micromark-util-types:
+        specifier: ^2.0.3
+        version: 2.0.3
       nice-grpc-client-middleware-devtools:
         specifier: ^1.0.9
         version: 1.0.9
