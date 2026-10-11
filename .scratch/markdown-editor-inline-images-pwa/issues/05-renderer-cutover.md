@@ -4,7 +4,7 @@
 
 **被阻塞于：** 03、04
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 所有使用 MemoContent 的地方都改为传入 Memo 正文，代码中不再有 `memo.nodes` 的引用
 - [ ] 勾选任务通过源码位置只修改该任务的 `[ ]`/`[x]`，其余文本逐字节不变；嵌套列表、引用块内、表格之后的任务都改对
