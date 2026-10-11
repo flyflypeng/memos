@@ -4,7 +4,7 @@
 
 **被阻塞于：** 06
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 只在行首或空白字符后触发；URL、分数、路径中的 `/` 不触发
 - [ ] 输入可以过滤菜单，方向键选择，Enter 插入，Esc 关闭
