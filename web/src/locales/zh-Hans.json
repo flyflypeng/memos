@@ -10,6 +10,10 @@
   "calendar": {
     "back-to-current-month": "回到当前月份"
   },
+  "pwa": {
+    "new-version-available": "有新版本可用。",
+    "refresh": "刷新"
+  },
   "common": {
     "about": "关于",
     "review": "回顾",

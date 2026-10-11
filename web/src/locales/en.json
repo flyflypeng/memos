@@ -10,6 +10,10 @@
   "calendar": {
     "back-to-current-month": "Back to current month"
   },
+  "pwa": {
+    "new-version-available": "A new version is available.",
+    "refresh": "Refresh"
+  },
   "common": {
     "about": "About",
     "review": "Review",
