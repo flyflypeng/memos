@@ -7,7 +7,7 @@ import { RendererContext } from "../types";
 describe("MemoContent Tag", () => {
   it("renders the tag with a leading hash and no filter affordance when filtering is disabled", () => {
     renderWithRouter(
-      <RendererContext.Provider value={{ nodes: [], embeddedMemos: new Set(), disableFilter: true }}>
+      <RendererContext.Provider value={{ content: "", embeddedMemos: new Set(), disableFilter: true }}>
         <Tag content="project/memos" />
       </RendererContext.Provider>,
     );

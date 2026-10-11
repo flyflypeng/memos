@@ -3,66 +3,17 @@ import { memo, useLayoutEffect, useMemo, useRef } from "react";
 import { PhotoProvider } from "react-photo-view";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoStore } from "@/store/v1";
-import { Node, NodeType } from "@/types/proto/api/v1/markdown_service";
 import { useTranslate } from "@/utils/i18n";
 import { isSuperUser } from "@/utils/user";
-import Renderer from "./Renderer";
 import { renderMemoMarkdown } from "./markdown/pipeline";
 import { RendererContext } from "./types";
 
 // MAX_DISPLAY_HEIGHT is the maximum height of the memo content to display when collapsed.
 export const MAX_DISPLAY_HEIGHT = 256;
 
-const isImageOnlyParagraph = (node: Node): boolean => {
-  return (
-    node.type === NodeType.PARAGRAPH &&
-    (node.paragraphNode?.children ?? []).length > 0 &&
-    (node.paragraphNode?.children ?? []).every((child) => child.type === NodeType.IMAGE)
-  );
-};
-
-// Merge consecutive image-only paragraphs separated by single LINE_BREAKs into one paragraph.
-// A blank line (two LINE_BREAKs or no LINE_BREAK between paragraphs) keeps them separate.
-const mergeConsecutiveImageParagraphs = (nodes: Node[]): Node[] => {
-  const result: Node[] = [];
-  let i = 0;
-
-  while (i < nodes.length) {
-    const node = nodes[i];
-    if (!isImageOnlyParagraph(node)) {
-      result.push(node);
-      i++;
-      continue;
-    }
-
-    // Start collecting consecutive image-only paragraphs.
-    const mergedChildren: Node[] = [...(node.paragraphNode?.children ?? [])];
-    i++;
-
-    while (i < nodes.length) {
-      // Allow skipping a single LINE_BREAK between image paragraphs.
-      if (nodes[i].type === NodeType.LINE_BREAK && i + 1 < nodes.length && isImageOnlyParagraph(nodes[i + 1])) {
-        mergedChildren.push(...(nodes[i + 1].paragraphNode?.children ?? []));
-        i += 2;
-      } else {
-        break;
-      }
-    }
-
-    result.push({
-      type: NodeType.PARAGRAPH,
-      paragraphNode: { children: mergedChildren },
-    } as Node);
-  }
-
-  return result;
-};
-
 interface Props {
-  // Exactly one of `content` and `nodes` is given. `content` (Memo content, the raw markdown) is
-  // rendered in the browser; `nodes` is the legacy server-parsed AST.
-  content?: string;
-  nodes?: Node[];
+  // Memo content (the raw markdown), rendered in the browser.
+  content: string;
   memoName?: string;
   readonly?: boolean;
   disableFilter?: boolean;
@@ -83,12 +34,11 @@ interface Props {
   onToggleCollapse?: () => void;
 }
 
-const MemoContent: React.FC<Props> = (props: Props) => {
+const MemoContent = (props: Props) => {
   const {
     className,
     contentClassName,
     content: memoContent,
-    nodes = [],
     memoName,
     embeddedMemos,
     onClick,
@@ -149,10 +99,7 @@ const MemoContent: React.FC<Props> = (props: Props) => {
     }
   };
 
-  const renderedMarkdown = useMemo(() => (memoContent === undefined ? null : renderMemoMarkdown(memoContent)), [memoContent]);
-  const mergedNodes = renderedMarkdown ? [] : mergeConsecutiveImageParagraphs(nodes);
-  let prevNode: Node | null = null;
-  let skipNextLineBreakFlag = false;
+  const renderedMarkdown = useMemo(() => renderMemoMarkdown(memoContent), [memoContent]);
 
   const content = (
     <div
@@ -172,26 +119,11 @@ const MemoContent: React.FC<Props> = (props: Props) => {
     >
       <div
         ref={memoContentContainerRef}
-        className={clsx(
-          "relative w-full max-w-full word-break",
-          // Markdown output separates blocks with newline text nodes, so it must not preserve whitespace.
-          !renderedMarkdown && "whitespace-pre-wrap",
-          isCollapsed && "line-clamp-6 max-h-60",
-          contentClassName,
-        )}
+        className={clsx("relative w-full max-w-full word-break", isCollapsed && "line-clamp-6 max-h-60", contentClassName)}
         onClick={handleMemoContentClick}
         onDoubleClick={handleMemoContentDoubleClick}
       >
         {renderedMarkdown}
-        {mergedNodes.map((node, index) => {
-          if (prevNode?.type !== NodeType.LINE_BREAK && node.type === NodeType.LINE_BREAK && skipNextLineBreakFlag) {
-            skipNextLineBreakFlag = false;
-            return null;
-          }
-          prevNode = node;
-          skipNextLineBreakFlag = true;
-          return <Renderer key={`${node.type}-${index}`} index={String(index)} node={node} />;
-        })}
         {isCollapsed && (
           <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-b from-transparent dark:to-zinc-800 to-white pointer-events-none"></div>
         )}
@@ -210,7 +142,7 @@ const MemoContent: React.FC<Props> = (props: Props) => {
   return (
     <RendererContext.Provider
       value={{
-        nodes,
+        content: memoContent,
         memoName: memoName,
         readonly: !allowEdit,
         disableFilter: props.disableFilter,

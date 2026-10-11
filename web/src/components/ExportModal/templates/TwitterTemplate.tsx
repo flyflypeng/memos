@@ -77,7 +77,7 @@ const TwitterTemplate = ({ memo }: TwitterTemplateProps) => {
 
       {/* Content */}
       <div className="mb-3 text-black dark:text-white text-lg">
-        <MemoContent memoName={memo.name} nodes={memo.nodes} readonly={true} />
+        <MemoContent memoName={memo.name} content={memo.content} readonly={true} />
       </div>
 
       {/* Time */}

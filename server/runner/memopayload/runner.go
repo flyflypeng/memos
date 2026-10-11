@@ -120,6 +120,11 @@ func TraverseASTNodes(nodes []ast.Node, fn func(ast.Node)) {
 			TraverseASTNodes(n.Children, fn)
 		case *ast.Bold:
 			TraverseASTNodes(n.Children, fn)
+		case *ast.Table:
+			TraverseASTNodes(n.Header, fn)
+			for _, row := range n.Rows {
+				TraverseASTNodes(row, fn)
+			}
 		}
 	}
 }

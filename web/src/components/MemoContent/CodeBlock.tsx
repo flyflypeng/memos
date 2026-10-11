@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, CopyIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import MermaidBlock from "./MermaidBlock";
-import { BaseProps } from "./types";
 
 // Special languages that are rendered differently.
 enum SpecialLanguage {
@@ -13,7 +12,7 @@ enum SpecialLanguage {
   MERMAID = "mermaid",
 }
 
-interface Props extends BaseProps {
+interface Props {
   language: string;
   content: string;
 }

@@ -30,3 +30,32 @@ func TestTagFixtures(t *testing.T) {
 		})
 	}
 }
+
+// TestHasImageFromContent checks that content referencing an image sets the has-image property,
+// wherever the image sits in the Memo.
+func TestHasImageFromContent(t *testing.T) {
+	cases := []struct {
+		name     string
+		content  string
+		hasImage bool
+	}{
+		{name: "inline image upload", content: "Screenshot:\n![](/file/resources/3/pasted-20261012-044314.png)", hasImage: true},
+		{name: "external image", content: "![logo](https://example.com/logo.png)", hasImage: true},
+		{name: "image in a list item", content: "- see ![](/file/resources/1/a.png)", hasImage: true},
+		{name: "image in a task", content: "- [ ] fix ![](/file/resources/1/a.png)", hasImage: true},
+		{name: "image in a blockquote", content: "> ![](/file/resources/1/a.png)", hasImage: true},
+		{name: "image in a heading", content: "# Title ![](/file/resources/1/a.png)", hasImage: true},
+		{name: "image in a table cell", content: "| a | b |\n| --- | --- |\n| ![](/file/resources/1/a.png) | x |", hasImage: true},
+		{name: "plain link", content: "[file](/file/resources/1/a.png)", hasImage: false},
+		{name: "image syntax in code", content: "`![](/file/resources/1/a.png)`", hasImage: false},
+		{name: "image syntax in a code block", content: "```\n![](/file/resources/1/a.png)\n```", hasImage: false},
+		{name: "no image", content: "just text", hasImage: false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			memo := &store.Memo{Content: c.content}
+			require.NoError(t, RebuildMemoPayload(memo))
+			require.Equal(t, c.hasImage, memo.Payload.Property.HasImage)
+		})
+	}
+}

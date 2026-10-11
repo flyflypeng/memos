@@ -229,69 +229,6 @@ paths:
           type: string
       tags:
         - MarkdownService
-  /api/v1/markdown/node:restore:
-    post:
-      summary: RestoreMarkdownNodes restores the given nodes to markdown content.
-      operationId: MarkdownService_RestoreMarkdownNodes
-      responses:
-        "200":
-          description: A successful response.
-          schema:
-            $ref: '#/definitions/v1RestoreMarkdownNodesResponse'
-        default:
-          description: An unexpected error response.
-          schema:
-            $ref: '#/definitions/googleRpcStatus'
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: '#/definitions/v1RestoreMarkdownNodesRequest'
-      tags:
-        - MarkdownService
-  /api/v1/markdown/node:stringify:
-    post:
-      summary: StringifyMarkdownNodes stringify the given nodes to plain text content.
-      operationId: MarkdownService_StringifyMarkdownNodes
-      responses:
-        "200":
-          description: A successful response.
-          schema:
-            $ref: '#/definitions/v1StringifyMarkdownNodesResponse'
-        default:
-          description: An unexpected error response.
-          schema:
-            $ref: '#/definitions/googleRpcStatus'
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: '#/definitions/v1StringifyMarkdownNodesRequest'
-      tags:
-        - MarkdownService
-  /api/v1/markdown:parse:
-    post:
-      summary: ParseMarkdown parses the given markdown content and returns a list of nodes.
-      operationId: MarkdownService_ParseMarkdown
-      responses:
-        "200":
-          description: A successful response.
-          schema:
-            $ref: '#/definitions/v1ParseMarkdownResponse'
-        default:
-          description: An unexpected error response.
-          schema:
-            $ref: '#/definitions/googleRpcStatus'
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: '#/definitions/v1ParseMarkdownRequest'
-      tags:
-        - MarkdownService
   /api/v1/memos:
     get:
       summary: ListMemos lists memos with pagination and filter.
@@ -1064,12 +1001,6 @@ paths:
                 format: date-time
               content:
                 type: string
-              nodes:
-                type: array
-                items:
-                  type: object
-                  $ref: '#/definitions/v1Node'
-                readOnly: true
               visibility:
                 $ref: '#/definitions/v1Visibility'
               tags:
@@ -1963,14 +1894,6 @@ paths:
       tags:
         - ResourceService
 definitions:
-  ListNodeKind:
-    type: string
-    enum:
-      - KIND_UNSPECIFIED
-      - ORDERED
-      - UNORDERED
-      - DESCRIPTION
-    default: KIND_UNSPECIFIED
   MemoServiceRenameMemoTagBody:
     type: object
     properties:
@@ -1999,14 +1922,6 @@ definitions:
     properties:
       reaction:
         $ref: '#/definitions/v1Reaction'
-  TableNodeRow:
-    type: object
-    properties:
-      cells:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
   TagServiceUpdateTagBody:
     type: object
     properties:
@@ -2208,12 +2123,6 @@ definitions:
         format: date-time
       content:
         type: string
-      nodes:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-        readOnly: true
       visibility:
         $ref: '#/definitions/v1Visibility'
       tags:
@@ -2623,50 +2532,6 @@ definitions:
       payload:
         $ref: '#/definitions/apiV1ActivityPayload'
         description: The payload of the activity.
-  v1AutoLinkNode:
-    type: object
-    properties:
-      url:
-        type: string
-      isRawText:
-        type: boolean
-  v1BlockquoteNode:
-    type: object
-    properties:
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1BoldItalicNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-      content:
-        type: string
-  v1BoldNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1CodeBlockNode:
-    type: object
-    properties:
-      language:
-        type: string
-      content:
-        type: string
-  v1CodeNode:
-    type: object
-    properties:
-      content:
-        type: string
   v1CreateMemoRequest:
     type: object
     properties:
@@ -2698,18 +2563,6 @@ definitions:
       name:
         type: string
       url:
-        type: string
-  v1EmbeddedContentNode:
-    type: object
-    properties:
-      resourceName:
-        type: string
-      params:
-        type: string
-  v1EscapingCharacterNode:
-    type: object
-    properties:
-      symbol:
         type: string
   v1GetReviewStatsResponse:
     type: object
@@ -2751,43 +2604,6 @@ definitions:
         type: integer
         format: int32
         description: Total count of memos in the period.
-  v1HTMLElementNode:
-    type: object
-    properties:
-      tagName:
-        type: string
-      attributes:
-        type: object
-        additionalProperties:
-          type: string
-  v1HeadingNode:
-    type: object
-    properties:
-      level:
-        type: integer
-        format: int32
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1HighlightNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1HorizontalRuleNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-  v1ImageNode:
-    type: object
-    properties:
-      altText:
-        type: string
-      url:
-        type: string
   v1Inbox:
     type: object
     properties:
@@ -2826,15 +2642,6 @@ definitions:
       - MEMO_COMMENT
       - VERSION_UPDATE
     default: TYPE_UNSPECIFIED
-  v1ItalicNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-      content:
-        type: string
-  v1LineBreakNode:
-    type: object
   v1LinkMetadata:
     type: object
     properties:
@@ -2843,13 +2650,6 @@ definitions:
       description:
         type: string
       image:
-        type: string
-  v1LinkNode:
-    type: object
-    properties:
-      text:
-        type: string
-      url:
         type: string
   v1ListIdentityProvidersResponse:
     type: object
@@ -2917,19 +2717,6 @@ definitions:
         description: |-
           A token, which can be sent as `page_token` to retrieve the next page.
           If this field is omitted, there are no subsequent pages.
-  v1ListNode:
-    type: object
-    properties:
-      kind:
-        $ref: '#/definitions/ListNodeKind'
-      indent:
-        type: integer
-        format: int32
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
   v1ListOnThisDayMemosResponse:
     type: object
     properties:
@@ -3007,16 +2794,6 @@ definitions:
         items:
           type: object
           $ref: '#/definitions/v1Webhook'
-  v1MathBlockNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1MathNode:
-    type: object
-    properties:
-      content:
-        type: string
   v1MemoProperty:
     type: object
     properties:
@@ -3076,114 +2853,6 @@ definitions:
     description: |2-
        - MEMO_VIEW_FULL: The full view of the memo. Includes all fields.
        - MEMO_VIEW_METADATA_ONLY: The metadata only view of the memo. Excludes the content/snippet fields.
-  v1Node:
-    type: object
-    properties:
-      type:
-        $ref: '#/definitions/v1NodeType'
-      lineBreakNode:
-        $ref: '#/definitions/v1LineBreakNode'
-        description: Block nodes.
-      paragraphNode:
-        $ref: '#/definitions/v1ParagraphNode'
-      codeBlockNode:
-        $ref: '#/definitions/v1CodeBlockNode'
-      headingNode:
-        $ref: '#/definitions/v1HeadingNode'
-      horizontalRuleNode:
-        $ref: '#/definitions/v1HorizontalRuleNode'
-      blockquoteNode:
-        $ref: '#/definitions/v1BlockquoteNode'
-      listNode:
-        $ref: '#/definitions/v1ListNode'
-      orderedListItemNode:
-        $ref: '#/definitions/v1OrderedListItemNode'
-      unorderedListItemNode:
-        $ref: '#/definitions/v1UnorderedListItemNode'
-      taskListItemNode:
-        $ref: '#/definitions/v1TaskListItemNode'
-      mathBlockNode:
-        $ref: '#/definitions/v1MathBlockNode'
-      tableNode:
-        $ref: '#/definitions/v1TableNode'
-      embeddedContentNode:
-        $ref: '#/definitions/v1EmbeddedContentNode'
-      textNode:
-        $ref: '#/definitions/v1TextNode'
-        description: Inline nodes.
-      boldNode:
-        $ref: '#/definitions/v1BoldNode'
-      italicNode:
-        $ref: '#/definitions/v1ItalicNode'
-      boldItalicNode:
-        $ref: '#/definitions/v1BoldItalicNode'
-      codeNode:
-        $ref: '#/definitions/v1CodeNode'
-      imageNode:
-        $ref: '#/definitions/v1ImageNode'
-      linkNode:
-        $ref: '#/definitions/v1LinkNode'
-      autoLinkNode:
-        $ref: '#/definitions/v1AutoLinkNode'
-      tagNode:
-        $ref: '#/definitions/v1TagNode'
-      strikethroughNode:
-        $ref: '#/definitions/v1StrikethroughNode'
-      escapingCharacterNode:
-        $ref: '#/definitions/v1EscapingCharacterNode'
-      mathNode:
-        $ref: '#/definitions/v1MathNode'
-      highlightNode:
-        $ref: '#/definitions/v1HighlightNode'
-      subscriptNode:
-        $ref: '#/definitions/v1SubscriptNode'
-      superscriptNode:
-        $ref: '#/definitions/v1SuperscriptNode'
-      referencedContentNode:
-        $ref: '#/definitions/v1ReferencedContentNode'
-      spoilerNode:
-        $ref: '#/definitions/v1SpoilerNode'
-      htmlElementNode:
-        $ref: '#/definitions/v1HTMLElementNode'
-  v1NodeType:
-    type: string
-    enum:
-      - NODE_UNSPECIFIED
-      - LINE_BREAK
-      - PARAGRAPH
-      - CODE_BLOCK
-      - HEADING
-      - HORIZONTAL_RULE
-      - BLOCKQUOTE
-      - LIST
-      - ORDERED_LIST_ITEM
-      - UNORDERED_LIST_ITEM
-      - TASK_LIST_ITEM
-      - MATH_BLOCK
-      - TABLE
-      - EMBEDDED_CONTENT
-      - TEXT
-      - BOLD
-      - ITALIC
-      - BOLD_ITALIC
-      - CODE
-      - IMAGE
-      - LINK
-      - AUTO_LINK
-      - TAG
-      - STRIKETHROUGH
-      - ESCAPING_CHARACTER
-      - MATH
-      - HIGHLIGHT
-      - SUBSCRIPT
-      - SUPERSCRIPT
-      - REFERENCED_CONTENT
-      - SPOILER
-      - HTML_ELEMENT
-    default: NODE_UNSPECIFIED
-    description: |2-
-       - LINE_BREAK: Block nodes.
-       - TEXT: Inline nodes.
   v1OnThisDayGroup:
     type: object
     properties:
@@ -3197,40 +2866,6 @@ definitions:
           type: object
           $ref: '#/definitions/apiV1Memo'
         description: The memos from that year.
-  v1OrderedListItemNode:
-    type: object
-    properties:
-      number:
-        type: string
-      indent:
-        type: integer
-        format: int32
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1ParagraphNode:
-    type: object
-    properties:
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1ParseMarkdownRequest:
-    type: object
-    properties:
-      markdown:
-        type: string
-  v1ParseMarkdownResponse:
-    type: object
-    properties:
-      nodes:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
   v1Reaction:
     type: object
     properties:
@@ -3267,13 +2902,6 @@ definitions:
         type: integer
         format: int32
         description: Number of memos recorded.
-  v1ReferencedContentNode:
-    type: object
-    properties:
-      resourceName:
-        type: string
-      params:
-        type: string
   v1Resource:
     type: object
     properties:
@@ -3307,19 +2935,6 @@ definitions:
         title: |-
           The related memo.
           Format: memos/{id}
-  v1RestoreMarkdownNodesRequest:
-    type: object
-    properties:
-      nodes:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1RestoreMarkdownNodesResponse:
-    type: object
-    properties:
-      markdown:
-        type: string
   v1RowStatus:
     type: string
     enum:
@@ -3335,56 +2950,6 @@ definitions:
         items:
           type: object
           $ref: '#/definitions/v1User'
-  v1SpoilerNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1StrikethroughNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1StringifyMarkdownNodesRequest:
-    type: object
-    properties:
-      nodes:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1StringifyMarkdownNodesResponse:
-    type: object
-    properties:
-      plainText:
-        type: string
-  v1SubscriptNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1SuperscriptNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1TableNode:
-    type: object
-    properties:
-      header:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-      delimiter:
-        type: array
-        items:
-          type: string
-      rows:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/TableNodeRow'
   v1Tag:
     type: object
     properties:
@@ -3421,44 +2986,6 @@ definitions:
         type: string
         format: date-time
         description: The pinned timestamp. If set, the tag is pinned.
-  v1TagNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1TaskListItemNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-      indent:
-        type: integer
-        format: int32
-      complete:
-        type: boolean
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
-  v1TextNode:
-    type: object
-    properties:
-      content:
-        type: string
-  v1UnorderedListItemNode:
-    type: object
-    properties:
-      symbol:
-        type: string
-      indent:
-        type: integer
-        format: int32
-      children:
-        type: array
-        items:
-          type: object
-          $ref: '#/definitions/v1Node'
   v1User:
     type: object
     properties:

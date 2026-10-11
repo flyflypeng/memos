@@ -58,7 +58,7 @@ const ReviewMemoCard = ({ memo, onEdit, dateDisplay = "date", className, headerS
           </div>
         )}
         <PhotoProvider>
-          <MemoContent memoName={memo.name} nodes={memo.nodes} disablePhotoProvider />
+          <MemoContent memoName={memo.name} content={memo.content} disablePhotoProvider />
           {memo.location && <MemoLocationView location={memo.location} />}
           {attachments.length > 0 && (
             <div className="mt-2">

@@ -3,7 +3,6 @@ syntax = "proto3";
 package memos.api.v1;
 
 import "api/v1/common.proto";
-import "api/v1/markdown_service.proto";
 import "api/v1/memo_relation_service.proto";
 import "api/v1/reaction_service.proto";
 import "api/v1/resource_service.proto";
@@ -149,7 +148,8 @@ message Memo {
 
   string content = 8;
 
-  repeated Node nodes = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  reserved 9;
+  reserved "nodes";
 
   Visibility visibility = 10;
 

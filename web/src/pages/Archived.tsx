@@ -110,7 +110,7 @@ const Archived = () => {
                     </Tooltip>
                   </div>
                 </div>
-                <MemoContent key={memo.name} memoName={memo.name} nodes={memo.nodes} readonly={true} />
+                <MemoContent key={memo.name} memoName={memo.name} content={memo.content} readonly={true} />
               </div>
             )}
             listSort={(memos: Memo[]) =>

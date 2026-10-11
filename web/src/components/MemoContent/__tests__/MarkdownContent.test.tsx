@@ -128,7 +128,7 @@ describe("MemoContent from Memo content: code and math", () => {
   it("highlights fenced code by language", async () => {
     const { container } = renderMemo("```js\nconst answer = 42;\n```");
     expect(screen.getByText("js")).toBeInTheDocument();
-    // Code blocks start collapsed, as on the nodes path.
+    // Code blocks start collapsed, as with the previous renderer.
     fireEvent.click(container.querySelector("svg.lucide-chevron-down")!);
     const code = container.querySelector("pre code.language-js")!;
     expect(code.querySelector(".hljs-keyword")).toHaveTextContent("const");

@@ -8,9 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/usememos/gomark/parser"
-	"github.com/usememos/gomark/parser/tokenizer"
-
 	v1pb "github.com/usememos/memos/proto/gen/api/v1"
 	storepb "github.com/usememos/memos/proto/gen/store"
 	"github.com/usememos/memos/store"
@@ -58,12 +55,6 @@ func (s *APIV1Service) convertMemoFromStore(ctx context.Context, memo *store.Mem
 			return nil, errors.Wrap(err, "failed to list memo reactions")
 		}
 		memoMessage.Reactions = listMemoReactionsResponse.Reactions
-
-		nodes, err := parser.Parse(tokenizer.Tokenize(memo.Content))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse content")
-		}
-		memoMessage.Nodes = convertFromASTNodes(nodes)
 
 		snippet, err := getMemoContentSnippet(memo.Content)
 		if err != nil {
