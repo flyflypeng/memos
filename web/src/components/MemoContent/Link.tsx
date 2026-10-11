@@ -9,7 +9,7 @@ import { WorkspaceSettingKey } from "@/types/proto/store/workspace_setting";
 
 interface Props {
   url: string;
-  text?: string;
+  text?: React.ReactNode;
 }
 
 const getFaviconWithGoogleS2 = (url: string) => {

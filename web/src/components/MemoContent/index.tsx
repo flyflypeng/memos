@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { memo, useLayoutEffect, useRef } from "react";
+import { memo, useLayoutEffect, useMemo, useRef } from "react";
 import { PhotoProvider } from "react-photo-view";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoStore } from "@/store/v1";
@@ -7,6 +7,7 @@ import { Node, NodeType } from "@/types/proto/api/v1/markdown_service";
 import { useTranslate } from "@/utils/i18n";
 import { isSuperUser } from "@/utils/user";
 import Renderer from "./Renderer";
+import { renderMemoMarkdown } from "./markdown/pipeline";
 import { RendererContext } from "./types";
 
 // MAX_DISPLAY_HEIGHT is the maximum height of the memo content to display when collapsed.
@@ -58,7 +59,10 @@ const mergeConsecutiveImageParagraphs = (nodes: Node[]): Node[] => {
 };
 
 interface Props {
-  nodes: Node[];
+  // Exactly one of `content` and `nodes` is given. `content` (Memo content, the raw markdown) is
+  // rendered in the browser; `nodes` is the legacy server-parsed AST.
+  content?: string;
+  nodes?: Node[];
   memoName?: string;
   readonly?: boolean;
   disableFilter?: boolean;
@@ -83,7 +87,8 @@ const MemoContent: React.FC<Props> = (props: Props) => {
   const {
     className,
     contentClassName,
-    nodes,
+    content: memoContent,
+    nodes = [],
     memoName,
     embeddedMemos,
     onClick,
@@ -144,7 +149,8 @@ const MemoContent: React.FC<Props> = (props: Props) => {
     }
   };
 
-  const mergedNodes = mergeConsecutiveImageParagraphs(nodes);
+  const renderedMarkdown = useMemo(() => (memoContent === undefined ? null : renderMemoMarkdown(memoContent)), [memoContent]);
+  const mergedNodes = renderedMarkdown ? [] : mergeConsecutiveImageParagraphs(nodes);
   let prevNode: Node | null = null;
   let skipNextLineBreakFlag = false;
 
@@ -167,13 +173,16 @@ const MemoContent: React.FC<Props> = (props: Props) => {
       <div
         ref={memoContentContainerRef}
         className={clsx(
-          "relative w-full max-w-full word-break whitespace-pre-wrap",
+          "relative w-full max-w-full word-break",
+          // Markdown output separates blocks with newline text nodes, so it must not preserve whitespace.
+          !renderedMarkdown && "whitespace-pre-wrap",
           isCollapsed && "line-clamp-6 max-h-60",
           contentClassName,
         )}
         onClick={handleMemoContentClick}
         onDoubleClick={handleMemoContentDoubleClick}
       >
+        {renderedMarkdown}
         {mergedNodes.map((node, index) => {
           if (prevNode?.type !== NodeType.LINE_BREAK && node.type === NodeType.LINE_BREAK && skipNextLineBreakFlag) {
             skipNextLineBreakFlag = false;
