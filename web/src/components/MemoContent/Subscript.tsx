@@ -1,5 +1,5 @@
 interface Props {
-  content: string;
+  content: React.ReactNode;
 }
 
 const Subscript: React.FC<Props> = ({ content }: Props) => {

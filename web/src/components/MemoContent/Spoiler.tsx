@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { useState } from "react";
 
 interface Props {
-  content: string;
+  content: React.ReactNode;
 }
 
 const Spoiler: React.FC<Props> = ({ content }: Props) => {
