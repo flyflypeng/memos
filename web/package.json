@@ -110,6 +110,7 @@
     "jsdom": "^30.1.2",
     "less": "^4.2.1",
     "long": "^5.2.3",
+    "micromark-util-types": "^2.0.3",
     "nice-grpc-client-middleware-devtools": "^1.0.9",
     "nice-grpc-web": "^3.3.5",
     "postcss": "^8.4.49",

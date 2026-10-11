@@ -11,9 +11,6 @@ export interface ResourceReferences {
 }
 
 const RESOURCE_PATH = /^\/file\/(resources\/\d+)(?:[/?#]|$)/;
-// Fallback for `![[resources/uid]]` lines until the embed plugin (ticket 04) emits `embeddedResource`
-// elements for them: a paragraph line that is exactly the embed, as in the old renderer.
-const EMBEDDED_RESOURCE_LINE = /^!\[\[resources\/([^\]?]+)(?:\?[^\]]*)?\]\]$/;
 
 // A site-relative `/file/resources/{id}/…` URL or the same URL on `origin`; other origins don't count.
 const resourceNameFromUrl = (url: string, origin: string): string | undefined => {
@@ -35,21 +32,6 @@ const collectReferences = (tree: Root, origin: string): ResourceReferences => {
       case "memosElement":
         if (node.name === "embeddedResource" && typeof node.props.uid === "string") references.uids.add(node.props.uid);
         break;
-      case "paragraph": {
-        // remark-breaks turns each newline into a `break`, so a line is the run between breaks.
-        // Code and inline code are their own node types, so their text never reaches here.
-        let line: typeof node.children = [];
-        for (const child of [...node.children, null]) {
-          if (child && child.type !== "break") {
-            line.push(child);
-            continue;
-          }
-          const uid = line.length === 1 && line[0].type === "text" ? EMBEDDED_RESOURCE_LINE.exec(line[0].value)?.[1] : undefined;
-          if (uid) references.uids.add(uid);
-          line = [];
-        }
-        break;
-      }
     }
   });
   return references;

@@ -10,6 +10,7 @@ import { useTranslate } from "@/utils/i18n";
 import { insertTextSpec } from "./commands";
 import { memoCompletionSource, tagCompletionSource } from "./completions";
 import { createEditorExtensions, placeholderCompartment } from "./extensions";
+import { startSlashUpload, uploadAnchorField } from "./inlineImages";
 import { embedMemoItem, slashBlockItems, slashCompletionSource } from "./slashCommands";
 
 export interface EditorRefActions {
@@ -37,6 +38,8 @@ interface Props {
   onContentChange: (content: string) => void;
   /** Return true when the paste was handled; CodeMirror then skips its default insertion. */
   onPaste: (event: ClipboardEvent, view: EditorView) => boolean;
+  /** Slash menu "Upload image" was picked; the position is anchored in `uploadAnchorField`. */
+  onSlashUploadImage: (view: EditorView) => void;
 }
 
 const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<EditorRefActions>) {
@@ -59,42 +62,55 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
       parent: containerRef.current!,
       state: EditorState.create({
         doc: initialContent,
-        extensions: createEditorExtensions({
-          placeholder,
-          markdownShortcutsEnabled: () => latest.current.props.markdownShortcutsEnabled,
-          completionSources: [
-            tagCompletionSource(() => latest.current.tags),
-            memoCompletionSource(async (query) => {
-              const userName = latest.current.userName;
-              if (!userName) return [];
-              const filters = [`creator == "${userName}"`, `row_status == "NORMAL"`];
-              if (query) filters.push(`content_search == [${JSON.stringify(query)}]`);
-              const { memos } = await memoServiceClient.listMemos({
-                pageSize: 8,
-                filter: filters.join(" && "),
-                view: MemoView.MEMO_VIEW_FULL,
-              });
-              return memos.map((memo) => ({
-                uid: memo.uid,
-                label: (memo.snippet || memo.content.slice(0, 80)).replace(/\s+/g, " "),
-                detail: memo.createTime?.toLocaleString(),
-              }));
-            }),
-            slashCompletionSource(() => [
-              ...slashBlockItems((id) => latest.current.t(`editor.slash.${id}`)),
-              embedMemoItem(latest.current.t("editor.slash.embed-memo")),
-            ]),
-          ],
-          onDocChange: (content) => latest.current.props.onContentChange(content),
-          onPaste: (event, view) => latest.current.props.onPaste(event, view),
-          // Files dropped on the editor are uploaded by the MemoEditor container; keep CodeMirror
-          // from inserting their text content.
-          onDrop: (event) => {
-            if (!event.dataTransfer?.files.length) return false;
-            event.preventDefault();
-            return true;
-          },
-        }),
+        extensions: [
+          uploadAnchorField,
+          createEditorExtensions({
+            placeholder,
+            markdownShortcutsEnabled: () => latest.current.props.markdownShortcutsEnabled,
+            completionSources: [
+              tagCompletionSource(() => latest.current.tags),
+              memoCompletionSource(async (query) => {
+                const userName = latest.current.userName;
+                if (!userName) return [];
+                const filters = [`creator == "${userName}"`, `row_status == "NORMAL"`];
+                if (query) filters.push(`content_search == [${JSON.stringify(query)}]`);
+                const { memos } = await memoServiceClient.listMemos({
+                  pageSize: 8,
+                  filter: filters.join(" && "),
+                  view: MemoView.MEMO_VIEW_FULL,
+                });
+                return memos.map((memo) => ({
+                  uid: memo.uid,
+                  label: (memo.snippet || memo.content.slice(0, 80)).replace(/\s+/g, " "),
+                  detail: memo.createTime?.toLocaleString(),
+                }));
+              }),
+              slashCompletionSource(() => [
+                ...slashBlockItems((id) => latest.current.t(`editor.slash.${id}`)),
+                embedMemoItem(latest.current.t("editor.slash.embed-memo")),
+                {
+                  id: "upload-image",
+                  label: latest.current.t("editor.slash.upload-image"),
+                  detail: "![]()",
+                  keywords: ["image", "upload", "picture", "photo", "img"],
+                  run: (view, from, to) => {
+                    view.dispatch(startSlashUpload(from, to));
+                    latest.current.props.onSlashUploadImage(view);
+                  },
+                },
+              ]),
+            ],
+            onDocChange: (content) => latest.current.props.onContentChange(content),
+            onPaste: (event, view) => latest.current.props.onPaste(event, view),
+            // Files dropped on the editor are uploaded by the MemoEditor container; keep CodeMirror
+            // from inserting their text content.
+            onDrop: (event) => {
+              if (!event.dataTransfer?.files.length) return false;
+              event.preventDefault();
+              return true;
+            },
+          }),
+        ],
       }),
     });
     viewRef.current = view;

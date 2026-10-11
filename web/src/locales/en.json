@@ -121,7 +121,8 @@
       "math-block": "Math block",
       "mermaid": "Mermaid diagram",
       "divider": "Divider",
-      "embed-memo": "Embed memo"
+      "embed-memo": "Embed memo",
+      "upload-image": "Upload image"
     }
   },
   "inbox": {
