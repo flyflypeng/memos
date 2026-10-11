@@ -11,6 +11,7 @@ import "./helpers/polyfill";
 import "./i18n";
 import CommonContextProvider from "./layouts/CommonContextProvider";
 import "./less/highlight.less";
+import "./less/memo-editor.less";
 import router from "./router";
 import store from "./store";
 import theme from "./theme";
