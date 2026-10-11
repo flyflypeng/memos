@@ -101,7 +101,22 @@
     "add-your-comment-here": "ここにコメントを追加...",
     "any-thoughts": "今思ったことは...",
     "save": "保存",
-    "preserve-update-time": "更新日時を保持"
+    "preserve-update-time": "更新日時を保持",
+    "slash": {
+      "heading-1": "見出し 1",
+      "heading-2": "見出し 2",
+      "heading-3": "見出し 3",
+      "bullet-list": "箇条書きリスト",
+      "ordered-list": "番号付きリスト",
+      "task-list": "タスクリスト",
+      "quote": "引用",
+      "code-block": "コードブロック",
+      "table": "表",
+      "math-block": "数式ブロック",
+      "mermaid": "Mermaid 図",
+      "divider": "区切り線",
+      "embed-memo": "メモを埋め込む"
+    }
   },
   "inbox": {
     "memo-comment": "{{user}} があなたの {{memo}} にコメントしました。",

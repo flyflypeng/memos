@@ -6,9 +6,11 @@ import { memoServiceClient } from "@/grpcweb";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoTagList } from "@/store/v1";
 import { MemoView } from "@/types/proto/api/v1/memo_service";
+import { useTranslate } from "@/utils/i18n";
 import { insertTextSpec } from "./commands";
 import { memoCompletionSource, tagCompletionSource } from "./completions";
 import { createEditorExtensions, placeholderCompartment } from "./extensions";
+import { embedMemoItem, slashBlockItems, slashCompletionSource } from "./slashCommands";
 
 export interface EditorRefActions {
   getEditor: () => EditorView | null;
@@ -41,9 +43,11 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
   const { className, contentClassName, initialContent, placeholder } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const t = useTranslate();
   // Extensions are built once; they read the latest props/data through this ref.
-  const latest = useRef({ props, tags: [] as string[], userName: "" });
+  const latest = useRef({ props, tags: [] as string[], userName: "", t });
   latest.current.props = props;
+  latest.current.t = t;
   latest.current.tags = Object.entries(useMemoTagList())
     .sort((a, b) => a[0].localeCompare(b[0]))
     .sort((a, b) => b[1] - a[1])
@@ -76,6 +80,10 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
                 detail: memo.createTime?.toLocaleString(),
               }));
             }),
+            slashCompletionSource(() => [
+              ...slashBlockItems((id) => latest.current.t(`editor.slash.${id}`)),
+              embedMemoItem(latest.current.t("editor.slash.embed-memo")),
+            ]),
           ],
           onDocChange: (content) => latest.current.props.onContentChange(content),
           onPaste: (event, view) => latest.current.props.onPaste(event, view),

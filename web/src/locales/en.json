@@ -106,7 +106,22 @@
     "save": "Save",
     "zen-mode": "Zen Mode",
     "zen-mode-tooltip": "Zen Mode ({{shortcut}})",
-    "preserve-update-time": "Preserve update time"
+    "preserve-update-time": "Preserve update time",
+    "slash": {
+      "heading-1": "Heading 1",
+      "heading-2": "Heading 2",
+      "heading-3": "Heading 3",
+      "bullet-list": "Bulleted list",
+      "ordered-list": "Numbered list",
+      "task-list": "Task list",
+      "quote": "Quote",
+      "code-block": "Code block",
+      "table": "Table",
+      "math-block": "Math block",
+      "mermaid": "Mermaid diagram",
+      "divider": "Divider",
+      "embed-memo": "Embed memo"
+    }
   },
   "inbox": {
     "memo-comment": "{{user}} has a comment on your {{memo}}.",

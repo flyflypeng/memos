@@ -139,3 +139,20 @@ export const insertTabSpaces: StateCommand = ({ state, dispatch }) => {
  * Returns false outside of Markdown markup so the plain newline binding runs.
  */
 export const continueMarkup: StateCommand = insertNewlineContinueMarkupCommand({ nonTightLists: false });
+
+export interface TableSkeleton {
+  text: string;
+  /** Offset in `text` of the first header cell, where the cursor goes. */
+  cursor: number;
+}
+
+/**
+ * A GFM table skeleton with `rows` rows including the header row, and `cols` columns. Empty cells
+ * are padded to the width of the `---` delimiter so the columns line up.
+ */
+export const tableSkeleton = (rows: number, cols: number): TableSkeleton => {
+  const row = (cell: string) => `|${` ${cell} |`.repeat(cols)}`;
+  const empty = row("   ");
+  const lines = [empty, row("---"), ...Array.from({ length: Math.max(rows - 1, 0) }, () => empty)];
+  return { text: lines.join("\n"), cursor: 2 };
+};

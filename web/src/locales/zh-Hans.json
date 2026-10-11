@@ -106,7 +106,22 @@
     "save": "保存",
     "zen-mode": "禅定模式",
     "zen-mode-tooltip": "禅定模式 ({{shortcut}})",
-    "preserve-update-time": "保留更新时间"
+    "preserve-update-time": "保留更新时间",
+    "slash": {
+      "heading-1": "一级标题",
+      "heading-2": "二级标题",
+      "heading-3": "三级标题",
+      "bullet-list": "无序列表",
+      "ordered-list": "有序列表",
+      "task-list": "任务列表",
+      "quote": "引用",
+      "code-block": "代码块",
+      "table": "表格",
+      "math-block": "公式块",
+      "mermaid": "Mermaid 图表",
+      "divider": "分割线",
+      "embed-memo": "嵌入 Memo"
+    }
   },
   "inbox": {
     "memo-comment": "{{user}} 评论了您的“{{memo}}”。",
