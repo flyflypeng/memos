@@ -30,7 +30,14 @@ import UploadResourceButton from "./ActionButton/UploadResourceButton";
 import ZenModeButton from "./ActionButton/ZenModeButton";
 import Editor, { EditorRefActions } from "./Editor";
 import { pasteUrlOverSelection } from "./Editor/commands";
-import { classifyTransfer, InlineImageUpload, pastedImageFilename, uploadInlineImages } from "./Editor/inlineImages";
+import {
+  classifyTransfer,
+  InlineImageUpload,
+  pastedImageFilename,
+  planDrop,
+  takeUploadAnchor,
+  uploadInlineImages,
+} from "./Editor/inlineImages";
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
@@ -265,7 +272,7 @@ const MemoEditor = (props: Props) => {
   };
 
   // Uploads images as inline images at `range` (placeholders first, references once uploaded).
-  // Shared by paste and, later, drop and the slash menu's "Upload image".
+  // Shared by paste, drop and the slash menu's "Upload image".
   const insertInlineImages = async (view: EditorView, uploads: InlineImageUpload[], range: { from: number; to: number }) => {
     setInlineUploadCount((count) => count + 1);
     try {
@@ -294,11 +301,40 @@ const MemoEditor = (props: Props) => {
     }
   };
 
-  const handleDropEvent = async (event: React.DragEvent) => {
-    if (event.dataTransfer && event.dataTransfer.files.length > 0) {
-      event.preventDefault();
-      await uploadMultiFiles(event.dataTransfer.files);
-    }
+  // Dropped images go where they were dropped (or at the selection when dropped outside the text)
+  // and keep their names; other files become attachments.
+  const handleDropEvent = (event: React.DragEvent) => {
+    const view = editorRef.current?.getEditor();
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    if (!view || files.length === 0) return;
+    event.preventDefault();
+    const plan = planDrop(view.state, files, view.posAtCoords({ x: event.clientX, y: event.clientY }));
+    if (!plan) return;
+    if (plan.uploads.length > 0) void insertInlineImages(view, plan.uploads, plan.range);
+    if (plan.attachments.length > 0) void uploadMultiFiles(plan.attachments);
+  };
+
+  // Slash menu "Upload image": the editor has anchored the position; pick images and insert them there.
+  const handleSlashUploadImage = (view: EditorView) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    const finish = () => {
+      const { position, spec } = takeUploadAnchor(view.state);
+      view.dispatch(spec);
+      const files = Array.from(input.files ?? []).filter((file) => file.type.startsWith("image/"));
+      if (position === null || files.length === 0) return;
+      void insertInlineImages(
+        view,
+        files.map((file) => ({ file, filename: file.name })),
+        { from: position, to: position },
+      );
+      view.focus();
+    };
+    input.addEventListener("change", finish, { once: true });
+    input.addEventListener("cancel", finish, { once: true });
+    input.click();
   };
 
   const handlePasteEvent = (event: ClipboardEvent, view: EditorView): boolean => {
@@ -521,6 +557,7 @@ const MemoEditor = (props: Props) => {
             markdownShortcutsEnabled={!workspaceMemoRelatedSetting.disableMarkdownShortcuts}
             onContentChange={handleContentChange}
             onPaste={handlePasteEvent}
+            onSlashUploadImage={handleSlashUploadImage}
           />
           <ResourceListView resourceList={state.resourceList} setResourceList={handleSetResourceList} content={content} />
           <RelationListView relationList={referenceRelations} setRelationList={handleSetRelationList} />

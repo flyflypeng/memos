@@ -3,7 +3,7 @@
 // seam); `uploadInlineImages` drives them against a live view and is shared by paste, drop and the
 // slash menu's "Upload image".
 import { isolateHistory } from "@codemirror/commands";
-import { EditorSelection, EditorState, Transaction, TransactionSpec } from "@codemirror/state";
+import { EditorSelection, EditorState, StateEffect, StateField, Transaction, TransactionSpec } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { Resource } from "@/types/proto/api/v1/resource_service";
 import { isImage } from "@/utils/resource";
@@ -119,3 +119,50 @@ export const uploadInlineImages = async (
   );
   return results.filter((resource): resource is Resource => resource !== undefined);
 };
+
+export interface DropPlan {
+  uploads: InlineImageUpload[];
+  attachments: File[];
+  // Where the inline images go: the drop position, or the selection when it is unknown.
+  range: { from: number; to: number };
+}
+
+// planDrop decides what dropping `files` does. Images become inline images at `dropPos` (from
+// `posAtCoords`; null when the drop missed the text, e.g. on the attachment list) and keep their
+// names; other files become attachments. Returns null when nothing was dropped.
+export const planDrop = (state: EditorState, files: File[], dropPos: number | null): DropPlan | null => {
+  const action = classifyTransfer("", files);
+  if (action.kind !== "files") return null;
+  const { from, to } = state.selection.main;
+  return {
+    uploads: action.images.map((file) => ({ file, filename: file.name })),
+    attachments: action.attachments,
+    range: dropPos === null ? { from, to } : { from: dropPos, to: dropPos },
+  };
+};
+
+const setUploadAnchor = StateEffect.define<number | null>();
+
+// uploadAnchorField remembers where the slash menu's "Upload image" was picked, mapped through the
+// edits made while the file picker is open.
+export const uploadAnchorField = StateField.define<number | null>({
+  create: () => null,
+  update: (anchor, tr) => {
+    for (const effect of tr.effects) if (effect.is(setUploadAnchor)) return effect.value;
+    return anchor === null ? null : tr.changes.mapPos(anchor);
+  },
+});
+
+// startSlashUpload replaces the typed `/query` and anchors the upload at its position.
+export const startSlashUpload = (from: number, to: number): TransactionSpec => ({
+  changes: { from, to },
+  selection: EditorSelection.cursor(from),
+  effects: setUploadAnchor.of(from),
+  userEvent: "input.complete",
+});
+
+// takeUploadAnchor clears the anchor; the returned position is read from the state before it.
+export const takeUploadAnchor = (state: EditorState): { position: number | null; spec: TransactionSpec } => ({
+  position: state.field(uploadAnchorField, false) ?? null,
+  spec: { effects: setUploadAnchor.of(null) },
+});
