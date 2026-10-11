@@ -1,3 +1,4 @@
+import { Divider } from "@mui/joy";
 import clsx from "clsx";
 import type { Element, ElementContent } from "hast";
 import type { ExtraProps } from "hast-util-to-jsx-runtime";
@@ -15,12 +16,14 @@ import {
 import { PhotoView } from "react-photo-view";
 import Checkbox from "@/components/ui/Checkbox";
 import { useScrollMask } from "@/hooks/useScrollMask";
+import { useMemoStore } from "@/store/v1";
 import Code from "../Code";
 import CodeBlock from "../CodeBlock";
-import HorizontalRule from "../HorizontalRule";
 import Link from "../Link";
 import Math from "../Math";
+import { RendererContext } from "../types";
 import { memosElementComponents } from "./registry";
+import { toggleTask } from "./tasks";
 
 // Tag name used in hast for MemosElement nodes (see plugin.ts).
 export const MEMOS_ELEMENT_TAG = "memos-element";
@@ -92,7 +95,7 @@ const Pre = ({ node }: Props<"pre">) => {
   if (languageOf(code) === "math") {
     return <Math content={content} block />;
   }
-  return <CodeBlock index="" language={languageOf(code)} content={content} />;
+  return <CodeBlock language={languageOf(code)} content={content} />;
 };
 
 const InlineCode = ({ node }: Props<"code">) => {
@@ -138,7 +141,8 @@ interface TaskState {
 }
 const TaskContext = createContext<TaskState | undefined>(undefined);
 
-const ListItem = ({ children, className, taskMarkerOffset }: Props<"li"> & { taskMarkerOffset?: number }) => {
+// The offset comes through the HTML stage (rehype-raw), which stringifies it.
+const ListItem = ({ children, className, taskMarkerOffset }: Props<"li"> & { taskMarkerOffset?: number | string }) => {
   if (taskMarkerOffset === undefined) {
     return <li>{children}</li>;
   }
@@ -151,7 +155,7 @@ const ListItem = ({ children, className, taskMarkerOffset }: Props<"li"> & { tas
   const ownContent = nestedListIndex === -1 ? content : content.slice(0, nestedListIndex);
   return (
     <li className="list-none">
-      <TaskContext.Provider value={{ checked, markerOffset: taskMarkerOffset }}>
+      <TaskContext.Provider value={{ checked, markerOffset: Number(taskMarkerOffset) }}>
         <div className={clsx(checked && "line-through opacity-80")}>{ownContent}</div>
         {nestedListIndex === -1 ? null : content.slice(nestedListIndex)}
       </TaskContext.Provider>
@@ -161,9 +165,26 @@ const ListItem = ({ children, className, taskMarkerOffset }: Props<"li"> & { tas
 
 const TaskCheckbox = ({ checked }: Props<"input">) => {
   const task = useContext(TaskContext);
+  const context = useContext(RendererContext);
+  const updateMemo = useMemoStore((state) => state.updateMemo);
+  const editable = task !== undefined && !context.readonly && context.memoName !== undefined;
+
+  const handleChange = async (on: boolean) => {
+    if (!editable) {
+      return;
+    }
+    await updateMemo({ name: context.memoName, content: toggleTask(context.content, task.markerOffset, on) }, ["content"]);
+  };
+
   return (
     <span className="inline-flex align-middle mr-1.5 -mt-0.5">
-      <Checkbox size="sm" checked={task?.checked ?? Boolean(checked)} disabled data-task-marker-offset={task?.markerOffset} />
+      <Checkbox
+        size="sm"
+        checked={task?.checked ?? Boolean(checked)}
+        disabled={!editable}
+        data-task-marker-offset={task?.markerOffset}
+        onChange={(e) => handleChange(e.target.checked)}
+      />
     </span>
   );
 };
@@ -194,7 +215,7 @@ export const standardComponents = {
       {children}
     </blockquote>
   ),
-  hr: () => <HorizontalRule index="" symbol="" />,
+  hr: () => <Divider className="!my-3" />,
   table: Table,
   tr: ({ children }: Props<"tr">) => <tr className="divide-x divide-gray-300 dark:divide-zinc-600">{children}</tr>,
   th: ({ children, style }: Props<"th">) => (
