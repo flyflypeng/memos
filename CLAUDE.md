@@ -105,8 +105,18 @@ const MyComponent: React.FC<Props> = ({ open, onClose }) => {
 ## Project-Specific Notes
 
 1. This project does not require typecheck and prettier operations
-2. All GitHub operations (issues, PRs, etc.) should target the repository chriscurrycc/memos, not the upstream fork
+2. All GitHub operations (issues, PRs, etc.) should target the repository flyflypeng/memos (this private fork no longer syncs with chriscurrycc/memos or usememos/memos)
 3. When updating README.md, always update all language versions: README.md (English), README_zh.md (简体中文), README_zh-Hant.md (繁體中文), README_ja.md (日本語)
 4. When adding i18n translations, update these 4 locales: en.json, zh-Hans.json, zh-Hant.json, ja.json
 5. When adding or modifying database migration scripts in `store/migration/`, also update `scripts/migration-repair.sh` to include the new tables/indexes for all three drivers (SQLite, MySQL, PostgreSQL)
 6. Before committing, always run `cd web && pnpm lint --fix` to ensure frontend code passes lint
+
+## Agent skills
+
+### Issue tracker
+
+issue 和 spec 以本地 Markdown 文件的形式存放在 `.scratch/` 下，详见 `docs/agents/issue-tracker.md`。
+
+### Domain docs
+
+单上下文：根目录 `GLOSSARY.md` 加 `docs/adr/`，详见 `docs/agents/domain.md`。
