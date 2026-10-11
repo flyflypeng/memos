@@ -46,7 +46,7 @@ type BlockShape =
   | { kind: "prefix"; prefix: string }
   /** Fenced block with the cursor on the empty line inside. */
   | { kind: "fence"; open: string; close: string }
-  | { kind: "table" }
+  | { kind: "table"; rows: number; cols: number }
   | { kind: "divider" };
 
 const BLOCKS = {
@@ -58,7 +58,7 @@ const BLOCKS = {
   "task-list": { kind: "prefix", prefix: "- [ ] " },
   quote: { kind: "prefix", prefix: "> " },
   "code-block": { kind: "fence", open: "```", close: "```" },
-  table: { kind: "table" },
+  table: { kind: "table", rows: 3, cols: 3 },
   "math-block": { kind: "fence", open: "$$", close: "$$" },
   mermaid: { kind: "fence", open: "```mermaid", close: "```" },
   divider: { kind: "divider" },
@@ -66,7 +66,6 @@ const BLOCKS = {
 
 export type SlashBlockId = keyof typeof BLOCKS;
 
-const SLASH_TABLE_SIZE = 3;
 const LIST_BLOCKS: Partial<Record<SlashBlockId, true>> = { "bullet-list": true, "ordered-list": true, "task-list": true };
 // Quote markers, indentation, then an optional list marker (with task checkbox).
 const CONTAINER_REGEX = /^((?:\s*>\s?)*)(\s*)(?:([-*+]|\d+[.)])( +)(\[[ xX]\] +)?)?/;
@@ -80,8 +79,14 @@ const CONTAINER_REGEX = /^((?:\s*>\s?)*)(\s*)(?:([-*+]|\d+[.)])( +)(\[[ xX]\] +)
  * - Tables and dividers get a blank line after a preceding paragraph (`text\n---` would be a setext
  *   heading); a table also gets one before following text, which would otherwise become a row.
  */
-export const applySlashBlock = (state: EditorState, from: number, to: number, id: SlashBlockId): TransactionSpec => {
-  const shape: BlockShape = BLOCKS[id];
+export const applySlashBlock = (state: EditorState, from: number, to: number, id: SlashBlockId): TransactionSpec =>
+  placeBlock(state, from, to, BLOCKS[id], Boolean(LIST_BLOCKS[id]));
+
+/** Replaces `from`–`to` with a `rows` × `cols` table, placed like the slash-menu table block. */
+export const tableBlockSpec = (state: EditorState, from: number, to: number, rows: number, cols: number): TransactionSpec =>
+  placeBlock(state, from, to, { kind: "table", rows, cols }, false);
+
+const placeBlock = (state: EditorState, from: number, to: number, shape: BlockShape, isListBlock: boolean): TransactionSpec => {
   const line = state.doc.lineAt(from);
   const [prefix, quote, indent, marker = "", markerGap = ""] = CONTAINER_REGEX.exec(line.text)!;
   // Prefix for the block's following lines: same quote, aligned with the item content.
@@ -104,7 +109,7 @@ export const applySlashBlock = (state: EditorState, from: number, to: number, id
     // The block stays on this line; the blank line goes in front of its container prefix.
     start = line.from;
     lead = cont.trimEnd() + "\n" + prefix;
-  } else if (marker && LIST_BLOCKS[id]) {
+  } else if (marker && isListBlock) {
     start = line.from + quote.length + indent.length;
     lead = "";
   } else {
@@ -127,7 +132,7 @@ export const applySlashBlock = (state: EditorState, from: number, to: number, id
       tail = rest ? nl + rest : "";
       break;
     case "table": {
-      const skeleton = tableSkeleton(SLASH_TABLE_SIZE, SLASH_TABLE_SIZE);
+      const skeleton = tableSkeleton(shape.rows, shape.cols);
       body = skeleton.text.split("\n").join(nl);
       cursor = skeleton.cursor;
       tail = rest ? blankLine + nl + rest : nextLineHasText ? blankLine : "";

@@ -10,6 +10,7 @@ import { EditorView, KeyBinding, keymap, placeholder as placeholderExt } from "@
 import { classHighlighter } from "@lezer/highlight";
 import { TAB_SPACE_WIDTH } from "@/helpers/consts";
 import { continueMarkup, insertLink, insertTabSpaces, toggleWrap } from "./commands";
+import { escapePipeSpec, formatTable, nextCell, previousCell, tableNewRow } from "./tableCommands";
 
 export interface EditorExtensionOptions {
   placeholder: string;
@@ -59,6 +60,10 @@ export const createEditorExtensions = (options: EditorExtensionOptions): Extensi
     keymap.of(
       [
         ...markdownShortcutKeymap(options.markdownShortcutsEnabled),
+        // Table bindings return false outside a GFM table, so the list / indent bindings after them run.
+        { key: "Enter", run: tableNewRow },
+        { key: "Tab", run: nextCell, shift: previousCell },
+        { key: "Shift-Alt-f", run: formatTable, preventDefault: true },
         { key: "Enter", run: continueMarkup },
         { key: "Backspace", run: deleteMarkupBackward },
         { key: "Tab", run: insertTabSpaces, preventDefault: true },
@@ -66,6 +71,12 @@ export const createEditorExtensions = (options: EditorExtensionOptions): Extensi
       ].map(imeSafe),
     ),
   ),
+  EditorView.inputHandler.of((view, from, to, text) => {
+    if (view.composing || view.compositionStarted) return false;
+    const spec = escapePipeSpec(view.state, from, to, text);
+    if (spec) view.dispatch(spec);
+    return spec !== null;
+  }),
   keymap.of([...defaultKeymap.filter((binding) => !CONTAINER_KEYS[binding.key ?? ""]), ...historyKeymap].map(imeSafe)),
   EditorView.updateListener.of((update) => {
     if (update.docChanged) options.onDocChange(update.state.doc.toString());
