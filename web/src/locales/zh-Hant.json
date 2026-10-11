@@ -116,7 +116,8 @@
       "math-block": "公式區塊",
       "mermaid": "Mermaid 圖表",
       "divider": "分隔線",
-      "embed-memo": "嵌入 Memo"
+      "embed-memo": "嵌入 Memo",
+      "upload-image": "上傳圖片"
     }
   },
   "inbox": {

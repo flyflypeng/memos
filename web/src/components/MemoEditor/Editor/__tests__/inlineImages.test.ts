@@ -1,6 +1,15 @@
 import { EditorSelection, EditorState, TransactionSpec } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
-import { classifyTransfer, insertUploadPlaceholders, pastedImageFilename, replaceUploadPlaceholder } from "../inlineImages";
+import {
+  classifyTransfer,
+  insertUploadPlaceholders,
+  pastedImageFilename,
+  planDrop,
+  replaceUploadPlaceholder,
+  startSlashUpload,
+  takeUploadAnchor,
+  uploadAnchorField,
+} from "../inlineImages";
 
 const file = (name: string, type: string) => new File(["x"], name, { type });
 
@@ -134,5 +143,54 @@ describe("upload placeholders", () => {
     state = apply(state, insertUploadPlaceholders(state, ["t1"], 0));
     state = state.update({ changes: { from: 0, to: state.doc.length, insert: "gone" } }).state;
     expect(replaceUploadPlaceholder(state, "t1", "![](/file/resources/1/a.png)")).toBeNull();
+  });
+});
+
+describe("planDrop (drop decision and position)", () => {
+  const a = file("a.png", "image/png");
+  const b = file("photo 2.jpg", "image/jpeg");
+  const pdf = file("report.pdf", "application/pdf");
+
+  it("inserts dropped images at the drop position in order, keeping their names; other files become attachments", () => {
+    const state = create("hello |world");
+    const plan = planDrop(state, [a, pdf, b], 2)!;
+    expect(plan.uploads.map((u) => [u.file, u.filename])).toEqual([
+      [a, "a.png"],
+      [b, "photo 2.jpg"],
+    ]);
+    expect(plan.attachments).toEqual([pdf]);
+    expect(plan.range).toEqual({ from: 2, to: 2 });
+    const next = apply(state, insertUploadPlaceholders(state, ["t1", "t2"], plan.range.from, plan.range.to));
+    expect(show(next)).toBe(`he${P("t1")}\n${P("t2")}|llo world`);
+  });
+
+  it("does not replace the selection when dropping elsewhere", () => {
+    expect(planDrop(create("<abc> def"), [a], 5)!.range).toEqual({ from: 5, to: 5 });
+  });
+
+  it("falls back to the selection when the drop position is unknown", () => {
+    expect(planDrop(create("ab<cd>"), [a], null)!.range).toEqual({ from: 2, to: 4 });
+  });
+
+  it("returns null when no files were dropped", () => {
+    expect(planDrop(create("|"), [], 0)).toBeNull();
+  });
+});
+
+describe("slash upload anchor", () => {
+  const withField = (marked: string) => {
+    const s = create(marked);
+    return EditorState.create({ doc: s.doc, selection: s.selection, extensions: uploadAnchorField });
+  };
+
+  it("removes the /query and follows edits made while the picker is open", () => {
+    let state = withField("ab /up|cd");
+    state = apply(state, startSlashUpload(3, 6));
+    expect(show(state)).toBe("ab |cd");
+    state = state.update({ changes: { from: 0, insert: "XY" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "!" } }).state;
+    const { position, spec } = takeUploadAnchor(state);
+    expect(position).toBe(5);
+    expect(takeUploadAnchor(apply(state, spec)).position).toBeNull();
   });
 });

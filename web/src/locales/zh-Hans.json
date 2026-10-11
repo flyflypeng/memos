@@ -121,7 +121,8 @@
       "math-block": "公式块",
       "mermaid": "Mermaid 图表",
       "divider": "分割线",
-      "embed-memo": "嵌入 Memo"
+      "embed-memo": "嵌入 Memo",
+      "upload-image": "上传图片"
     }
   },
   "inbox": {

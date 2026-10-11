@@ -116,7 +116,8 @@
       "math-block": "数式ブロック",
       "mermaid": "Mermaid 図",
       "divider": "区切り線",
-      "embed-memo": "メモを埋め込む"
+      "embed-memo": "メモを埋め込む",
+      "upload-image": "画像をアップロード"
     }
   },
   "inbox": {
