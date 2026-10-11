@@ -4,7 +4,7 @@
 
 **被阻塞于：** 07
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 插入表格可以选择行数和列数，生成合法的 GFM 表格骨架
 - [ ] Tab/Shift+Tab 在单元格间移动，末行按 Enter 新增一行
