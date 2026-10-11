@@ -131,7 +131,9 @@
       "inline-code": "インラインコード",
       "code-block": "コードブロック",
       "link": "リンク",
-      "math": "数式"
+      "math": "数式",
+      "table": "表を挿入",
+      "format-table": "表を整形"
     }
   },
   "inbox": {

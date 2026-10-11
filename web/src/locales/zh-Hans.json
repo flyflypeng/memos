@@ -136,7 +136,9 @@
       "inline-code": "行内代码",
       "code-block": "代码块",
       "link": "链接",
-      "math": "公式"
+      "math": "公式",
+      "table": "插入表格",
+      "format-table": "格式化表格"
     }
   },
   "inbox": {

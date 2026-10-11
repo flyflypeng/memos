@@ -63,7 +63,8 @@ export const createEditorExtensions = (options: EditorExtensionOptions): Extensi
         // Table bindings return false outside a GFM table, so the list / indent bindings after them run.
         { key: "Enter", run: tableNewRow },
         { key: "Tab", run: nextCell, shift: previousCell },
-        { key: "Shift-Alt-f", run: formatTable, preventDefault: true },
+        // Not Alt-based: CodeMirror treats Alt+letter on macOS as a typed character.
+        { key: "Mod-Shift-f", run: formatTable },
         { key: "Enter", run: continueMarkup },
         { key: "Backspace", run: deleteMarkupBackward },
         { key: "Tab", run: insertTabSpaces, preventDefault: true },

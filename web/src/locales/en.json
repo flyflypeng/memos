@@ -136,7 +136,9 @@
       "inline-code": "Inline code",
       "code-block": "Code block",
       "link": "Link",
-      "math": "Formula"
+      "math": "Formula",
+      "table": "Insert table",
+      "format-table": "Format table"
     }
   },
   "inbox": {

@@ -131,7 +131,9 @@
       "inline-code": "行內程式碼",
       "code-block": "程式碼區塊",
       "link": "連結",
-      "math": "公式"
+      "math": "公式",
+      "table": "插入表格",
+      "format-table": "格式化表格"
     }
   },
   "inbox": {
