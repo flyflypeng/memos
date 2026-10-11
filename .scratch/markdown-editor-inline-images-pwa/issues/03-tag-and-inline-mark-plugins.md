@@ -4,7 +4,7 @@
 
 **被阻塞于：** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 01 的共享标签样例在 vitest 一侧（remark 标签插件）全部通过，与 Go 一侧结果一致
 - [ ] 代码、链接和标题中的 `#` 不会被识别为标签
