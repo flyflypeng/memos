@@ -1,6 +1,6 @@
 import type { Element, Root as HastRoot } from "hast";
 import { toJsxRuntime, type Components } from "hast-util-to-jsx-runtime";
-import type { ListItem } from "mdast";
+import type { ListItem, Root as MdastRoot } from "mdast";
 import type { CompileContext, Token } from "mdast-util-from-markdown";
 import type { ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
@@ -55,7 +55,9 @@ const sanitizeSchema: SanitizeSchema = {
   },
 };
 
-const processor = unified()
+// The remark stage (Markdown → mdast with Memos syntax) is shared with code that inspects Memo
+// content without rendering it, such as resource-reference extraction.
+const markdownProcessor = unified()
   .use(remarkParse)
   // Single tildes are Memos subscript (`~sub~`), not strikethrough.
   .use(remarkGfm, { singleTilde: false })
@@ -63,7 +65,13 @@ const processor = unified()
   // A newline inside a paragraph is a line break, as in the previous renderer.
   .use(remarkBreaks)
   .use(remarkTaskMarkerOffset)
-  .use(memoMarkdownPlugins.flatMap((plugin) => plugin.remarkPlugins ?? []))
+  .use(memoMarkdownPlugins.flatMap((plugin) => plugin.remarkPlugins ?? []));
+
+// parseMemoMarkdown parses Memo content into the mdast tree the renderer works from.
+// The plugin list is a `PluggableList`, which erases the tree type; remark transforms keep a Root.
+export const parseMemoMarkdown = (content: string) => markdownProcessor.runSync(markdownProcessor.parse(content)) as MdastRoot;
+
+const htmlProcessor = unified()
   .use(remarkRehype, {
     allowDangerousHtml: true,
     handlers: {
@@ -87,6 +95,6 @@ const components = standardComponents as unknown as Partial<Components>;
 
 // renderMemoMarkdown renders Memo content (the raw markdown text) to React elements.
 export const renderMemoMarkdown = (content: string): ReactNode => {
-  const tree: HastRoot = processor.runSync(processor.parse(content));
+  const tree: HastRoot = htmlProcessor.runSync(parseMemoMarkdown(content));
   return toJsxRuntime(tree, { Fragment, jsx, jsxs, components, passNode: true });
 };

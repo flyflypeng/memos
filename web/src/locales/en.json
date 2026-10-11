@@ -106,6 +106,7 @@
     "save": "Save",
     "zen-mode": "Zen Mode",
     "zen-mode-tooltip": "Zen Mode ({{shortcut}})",
+    "image-upload-failed": "Image upload failed",
     "preserve-update-time": "Preserve update time",
     "slash": {
       "heading-1": "Heading 1",

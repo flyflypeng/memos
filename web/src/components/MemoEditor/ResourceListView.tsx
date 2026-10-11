@@ -1,6 +1,8 @@
 import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { XIcon } from "lucide-react";
+import { useDeferredValue, useMemo } from "react";
+import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
 import { Resource } from "@/types/proto/api/v1/resource_service";
 import ResourceIcon from "../ResourceIcon";
 import SortableItem from "./SortableItem";
@@ -8,11 +10,19 @@ import SortableItem from "./SortableItem";
 interface Props {
   resourceList: Resource[];
   setResourceList: (resourceList: Resource[]) => void;
+  // The Memo content being edited. Resources it references are inline images and are not listed.
+  content: string;
 }
 
 const ResourceListView = (props: Props) => {
   const { resourceList, setResourceList } = props;
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
+  // Parsing runs off the typing path; the list may lag a keystroke behind.
+  const content = useDeferredValue(props.content);
+  const visibleResourceList = useMemo(
+    () => excludeReferencedResources(resourceList, content, window.location.origin),
+    [resourceList, content],
+  );
 
   const handleDeleteResource = async (name: string) => {
     setResourceList(resourceList.filter((resource) => resource.name !== name));
@@ -31,10 +41,10 @@ const ResourceListView = (props: Props) => {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={resourceList.map((resource) => resource.name)} strategy={verticalListSortingStrategy}>
-        {resourceList.length > 0 && (
+      <SortableContext items={visibleResourceList.map((resource) => resource.name)} strategy={verticalListSortingStrategy}>
+        {visibleResourceList.length > 0 && (
           <div className="w-full flex flex-row justify-start flex-wrap gap-2 mt-2 max-h-[50vh] overflow-y-auto">
-            {resourceList.map((resource) => {
+            {visibleResourceList.map((resource) => {
               return (
                 <div
                   key={resource.name}

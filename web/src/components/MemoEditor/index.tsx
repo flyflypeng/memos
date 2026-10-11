@@ -6,6 +6,7 @@ import { CalendarClockIcon, LoaderIcon, SendIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import useLocalStorage from "react-use/lib/useLocalStorage";
+import { excludeReferencedResources, extractResourceReferences } from "@/components/MemoContent/markdown/resourceReferences";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import { memoServiceClient } from "@/grpcweb";
@@ -29,9 +30,11 @@ import UploadResourceButton from "./ActionButton/UploadResourceButton";
 import ZenModeButton from "./ActionButton/ZenModeButton";
 import Editor, { EditorRefActions } from "./Editor";
 import { pasteUrlOverSelection } from "./Editor/commands";
+import { classifyTransfer, InlineImageUpload, pastedImageFilename, uploadInlineImages } from "./Editor/inlineImages";
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
+import { ReconcileInput, reconcileResources } from "./reconcileResources";
 import { MemoEditorContext } from "./types";
 
 export interface Props {
@@ -82,6 +85,12 @@ const MemoEditor = (props: Props) => {
   const [preserveUpdateTime, setPreserveUpdateTime] = useState<boolean>(false);
   const [zenModeOpen, setZenModeOpen] = useState(false);
   const editorRef = useRef<EditorRefActions>(null);
+  const [content, setContent] = useState("");
+  // The Memo as the editor opened it (empty for a new Memo) and everything uploaded since; both feed
+  // the save-time resource decision.
+  const originalRef = useRef<ReconcileInput["original"]>({ content: "", resources: [] });
+  const sessionUploadsRef = useRef<Resource[]>([]);
+  const [inlineUploadCount, setInlineUploadCount] = useState(0);
   const userSetting = userStore.userSetting as UserSetting;
   const contentCacheKey = `${currentUser.name}-${cacheKey || ""}`;
   const [contentCache, setContentCache] = useLocalStorage<string>(contentCacheKey, "");
@@ -124,10 +133,12 @@ const MemoEditor = (props: Props) => {
     const memo = await memoStore.getOrFetchMemoByName(memoName);
     if (memo) {
       focusEditor();
+      originalRef.current = { content: memo.content, resources: memo.resources };
       setState((prevState) => ({
         ...prevState,
         memoVisibility: memo.visibility,
-        resourceList: memo.resources,
+        // Resources the saved content references are inline images, not attachments.
+        resourceList: excludeReferencedResources(memo.resources, memo.content, window.location.origin),
         relationList: memo.relations,
         location: memo.location,
       }));
@@ -227,7 +238,7 @@ const MemoEditor = (props: Props) => {
     }
   };
 
-  const uploadMultiFiles = async (files: FileList) => {
+  const uploadMultiFiles = async (files: Iterable<File>) => {
     const uploadedResourceList: Resource[] = [];
     for (const file of files) {
       const resource = await handleUploadResource(file);
@@ -245,10 +256,41 @@ const MemoEditor = (props: Props) => {
       }
     }
     if (uploadedResourceList.length > 0) {
+      sessionUploadsRef.current.push(...uploadedResourceList);
       setState((prevState) => ({
         ...prevState,
         resourceList: [...prevState.resourceList, ...uploadedResourceList],
       }));
+    }
+  };
+
+  // Uploads images as inline images at `range` (placeholders first, references once uploaded).
+  // Shared by paste and, later, drop and the slash menu's "Upload image".
+  const insertInlineImages = async (view: EditorView, uploads: InlineImageUpload[], range: { from: number; to: number }) => {
+    setInlineUploadCount((count) => count + 1);
+    try {
+      const resources = await uploadInlineImages(
+        view,
+        uploads,
+        range,
+        async (file, filename) =>
+          resourceStore.createResource({
+            resource: Resource.fromPartial({
+              filename,
+              size: file.size,
+              type: file.type,
+              content: new Uint8Array(await file.arrayBuffer()),
+            }),
+          }),
+        (error) => {
+          console.error(error);
+          const details = error instanceof Error && "details" in error && typeof error.details === "string" ? error.details : "";
+          toast.error(details || t("editor.image-upload-failed"));
+        },
+      );
+      sessionUploadsRef.current.push(...resources);
+    } finally {
+      setInlineUploadCount((count) => count - 1);
     }
   };
 
@@ -260,12 +302,21 @@ const MemoEditor = (props: Props) => {
   };
 
   const handlePasteEvent = (event: ClipboardEvent, view: EditorView): boolean => {
-    if (event.clipboardData && event.clipboardData.files.length > 0) {
+    const text = event.clipboardData?.getData("text/plain") ?? "";
+    const action = classifyTransfer(text, Array.from(event.clipboardData?.files ?? []));
+    if (action.kind === "files") {
       event.preventDefault();
-      void uploadMultiFiles(event.clipboardData.files);
+      if (action.images.length > 0) {
+        const now = new Date();
+        const uploads = action.images.map((file) => ({ file, filename: pastedImageFilename(file, now) }));
+        void insertInlineImages(view, uploads, view.state.selection.main);
+      }
+      if (action.attachments.length > 0) {
+        void uploadMultiFiles(action.attachments);
+      }
       return true;
     }
-    if (pasteUrlOverSelection(event.clipboardData?.getData("text/plain") ?? "")(view)) {
+    if (pasteUrlOverSelection(text)(view)) {
       event.preventDefault();
       return true;
     }
@@ -273,6 +324,7 @@ const MemoEditor = (props: Props) => {
   };
 
   const handleContentChange = (content: string) => {
+    setContent(content);
     setHasContent(content !== "");
     if (content !== "") {
       setContentCache(content);
@@ -281,8 +333,32 @@ const MemoEditor = (props: Props) => {
     }
   };
 
+  // The resources to save with the Memo (ADR 0002). The user's own resources are fetched only when
+  // the content references one this session doesn't know, e.g. an image in a draft from before a
+  // refresh; resources of other users are never resolved, so they are never linked.
+  const resolveResourcesToLink = async (content: string): Promise<Resource[]> => {
+    const origin = window.location.origin;
+    const input: ReconcileInput = {
+      original: originalRef.current,
+      current: { content, attachments: state.resourceList },
+      uploadedThisSession: sessionUploadsRef.current,
+      knownResources: [],
+      origin,
+    };
+    const references = extractResourceReferences(content, origin);
+    const known = [...input.original.resources, ...input.uploadedThisSession, ...input.current.attachments];
+    const unresolved =
+      [...references.names].some((name) => !known.some((resource) => resource.name === name)) ||
+      [...references.uids].some((uid) => !known.some((resource) => resource.uid === uid));
+    if (unresolved) {
+      input.knownResources = await resourceStore.fetchResources();
+    }
+    return reconcileResources(input).linkToMemo;
+  };
+
   const handleSaveBtnClick = async () => {
-    if (state.isRequesting) {
+    // Saving mid-upload would store the placeholder text instead of the image.
+    if (state.isRequesting || inlineUploadCount > 0) {
       return;
     }
 
@@ -294,6 +370,7 @@ const MemoEditor = (props: Props) => {
     });
     const content = editorRef.current?.getContent() ?? "";
     try {
+      const resources = await resolveResourcesToLink(content);
       // Update memo.
       if (memoName) {
         const prevMemo = await memoStore.getOrFetchMemoByName(memoName);
@@ -304,9 +381,14 @@ const MemoEditor = (props: Props) => {
             content,
             visibility: state.memoVisibility,
           };
-          if (!isEqual(state.resourceList, prevMemo.resources)) {
+          if (
+            !isEqual(
+              resources.map((resource) => resource.name),
+              prevMemo.resources.map((resource) => resource.name),
+            )
+          ) {
             updateMask.push("resources");
-            memoPatch.resources = state.resourceList;
+            memoPatch.resources = resources;
           }
           if (!isEqual(state.relationList, prevMemo.relations)) {
             updateMask.push("relations");
@@ -327,7 +409,7 @@ const MemoEditor = (props: Props) => {
           ? memoStore.createMemo({
               content,
               visibility: state.memoVisibility,
-              resources: state.resourceList,
+              resources,
               relations: state.relationList,
               location: state.location,
             })
@@ -337,7 +419,7 @@ const MemoEditor = (props: Props) => {
                 comment: {
                   content,
                   visibility: state.memoVisibility,
-                  resources: state.resourceList,
+                  resources,
                   relations: state.relationList,
                   location: state.location,
                 },
@@ -349,6 +431,7 @@ const MemoEditor = (props: Props) => {
         }
       }
       editorRef.current?.setContent("");
+      sessionUploadsRef.current = [];
     } catch (error: any) {
       console.error(error);
       toast.error(error.details);
@@ -384,7 +467,8 @@ const MemoEditor = (props: Props) => {
     }
   };
 
-  const allowSave = (hasContent || state.resourceList.length > 0) && !state.isUploadingResource && !state.isRequesting;
+  const allowSave =
+    (hasContent || state.resourceList.length > 0) && !state.isUploadingResource && inlineUploadCount === 0 && !state.isRequesting;
 
   return (
     <>
@@ -438,7 +522,7 @@ const MemoEditor = (props: Props) => {
             onContentChange={handleContentChange}
             onPaste={handlePasteEvent}
           />
-          <ResourceListView resourceList={state.resourceList} setResourceList={handleSetResourceList} />
+          <ResourceListView resourceList={state.resourceList} setResourceList={handleSetResourceList} content={content} />
           <RelationListView relationList={referenceRelations} setRelationList={handleSetRelationList} />
           <div
             className="w-full px-1 sm:px-2 py-2 flex flex-row justify-between items-center"

@@ -106,6 +106,7 @@
     "save": "保存",
     "zen-mode": "禅定模式",
     "zen-mode-tooltip": "禅定模式 ({{shortcut}})",
+    "image-upload-failed": "图片上传失败",
     "preserve-update-time": "保留更新时间",
     "slash": {
       "heading-1": "一级标题",
