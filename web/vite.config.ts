@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import react from "@vitejs/plugin-react";
 import { codeInspectorPlugin } from "code-inspector-plugin";
 import { resolve } from "path";
@@ -15,9 +16,11 @@ if (process.env.DEV_PROXY_SERVER && process.env.DEV_PROXY_SERVER.length > 0) {
 export default defineConfig({
   plugins: [
     react(),
-    codeInspectorPlugin({
-      bundler: "vite",
-    }),
+    // code-inspector keeps a server alive and blocks vitest from exiting.
+    !process.env.VITEST &&
+      codeInspectorPlugin({
+        bundler: "vite",
+      }),
     VitePWA({
       registerType: "prompt",
       injectRegister: false,
@@ -88,6 +91,11 @@ export default defineConfig({
     alias: {
       "@/": `${resolve(__dirname, "src")}/`,
     },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    css: false,
   },
   build: {
     rollupOptions: {
