@@ -102,6 +102,8 @@
     "protobufjs": "^7.4.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
-    "vitest": "^3"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^3",
+    "workbox-window": "^7.4.1"
   }
 }

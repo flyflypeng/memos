@@ -105,6 +105,11 @@ const App = () => {
     } else if (mode === "dark") {
       root.classList.add("dark");
     }
+    // Keep the standalone window title bar in sync with the app theme, regardless of the system preference.
+    if (mode === "light" || mode === "dark") {
+      const color = mode === "dark" ? "#18181b" : "#f4f4f5";
+      document.querySelectorAll<HTMLMetaElement>("meta[name='theme-color']").forEach((meta) => (meta.content = color));
+    }
   }, [mode]);
 
   useEffect(() => {

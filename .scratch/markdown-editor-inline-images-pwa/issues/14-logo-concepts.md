@@ -4,7 +4,7 @@
 
 **被阻塞于：** 无（可立即开始）
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 产出三个可独立使用的 SVG 源文件，并符合 macOS 圆角方形图标规范
 - [ ] 每个方案在浅色和深色背景上有 512/128/32/16 px 的对比图
@@ -12,3 +12,7 @@
 - [ ] 用户选定的方案记录在本工单评论中（这一步需要用户决策）
 
 参考：`.scratch/markdown-editor-inline-images-pwa/spec.md`、ADR 0001、ADR 0002、`GLOSSARY.md`。
+
+## Comments
+
+- 2026-10-12：三个方案已交付（`concept-a.svg`、`concept-b.svg`、`concept-c.svg` 和 `comparison.png`，均在实现者共享目录 `logo/` 下）。**用户选定方案 C「碎片组成 M」。**

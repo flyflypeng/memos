@@ -10,6 +10,10 @@
   "calendar": {
     "back-to-current-month": "今月に戻る"
   },
+  "pwa": {
+    "new-version-available": "新しいバージョンが利用可能です。",
+    "refresh": "更新"
+  },
   "common": {
     "about": "Memos について",
     "review": "振り返り",
