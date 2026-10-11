@@ -41,5 +41,14 @@ export const reconcileResources = (input: ReconcileInput): ReconcileOutput => {
     linkedNames.add(resource.name);
   }
 
-  return { linkToMemo, deleteUnused: [] };
+  // Only this session's uploads that no Memo owns are deleted here. The Memo's own resources that are
+  // left out are deleted by the server's SetMemoResources; other Memos' resources and unused
+  // resources from earlier sessions (draft images) are never touched.
+  const deleteUnused = uploadedThisSession.filter((resource) => !resource.memo && !linkedNames.has(resource.name));
+
+  return { linkToMemo, deleteUnused };
 };
+
+// Cancelling an edit of an existing Memo: the uploads of this session that still belong to no Memo.
+export const cancelCleanup = (uploadedThisSession: Resource[]): Resource[] =>
+  uploadedThisSession.filter((resource) => !resource.memo);

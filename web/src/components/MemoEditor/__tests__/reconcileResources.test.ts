@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
 import { Resource } from "@/types/proto/api/v1/resource_service";
-import { ReconcileInput, reconcileResources } from "../reconcileResources";
+import { ReconcileInput, cancelCleanup, reconcileResources } from "../reconcileResources";
 
 const ORIGIN = "http://localhost:3000";
 
@@ -100,5 +100,70 @@ describe("excludeReferencedResources (attachment list)", () => {
       "![](https://other.example/file/resources/2/a.pdf)",
     ].join("\n\n");
     expect(excludeReferencedResources(resources, content, ORIGIN).map((r) => r.name)).toEqual(["resources/2"]);
+  });
+});
+
+describe("reconcileResources: lifecycle (deleteUnused)", () => {
+  const deleted = (output: { deleteUnused: Resource[] }) => output.deleteUnused.map((r) => r.name);
+
+  it("deletes an unowned upload of this session whose reference was removed", () => {
+    const output = reconcile({ content: "no image", uploadedThisSession: [resource(1)] });
+    expect(deleted(output)).toEqual(["resources/1"]);
+  });
+
+  it("leaves the memo's own removed inline image to the server (unlinked, not client-deleted)", () => {
+    const own = resource(4, { memo: "memos/1" });
+    const output = reconcile({ original: { content: "![](/file/resources/4/img4.png)", resources: [own] }, content: "gone" });
+    expect(linked(output)).toEqual([]);
+    expect(deleted(output)).toEqual([]);
+  });
+
+  it("keeps an attachment the memo had on open while it stays in the attachment list, even unreferenced", () => {
+    const pdf = resource(2, { memo: "memos/1", filename: "a.pdf", type: "application/pdf" });
+    const output = reconcile({ original: { content: "x", resources: [pdf] }, content: "y", attachments: [pdf] });
+    expect(linked(output)).toEqual(["resources/2"]);
+    expect(deleted(output)).toEqual([]);
+  });
+
+  it("keeps an unreferenced upload of this session that is in the attachment list", () => {
+    const pdf = resource(3, { filename: "a.pdf", type: "application/pdf" });
+    const output = reconcile({ content: "y", attachments: [pdf], uploadedThisSession: [pdf] });
+    expect(linked(output)).toEqual(["resources/3"]);
+    expect(deleted(output)).toEqual([]);
+  });
+
+  it("turns a referenced attachment into an inline image: still linked, no longer listed", () => {
+    const att = resource(2, { memo: "memos/1" });
+    const content = "![](/file/resources/2/img2.png)";
+    const output = reconcile({ original: { content: "x", resources: [att] }, content });
+    expect(linked(output)).toEqual(["resources/2"]);
+    expect(excludeReferencedResources([att], content, ORIGIN)).toEqual([]);
+  });
+
+  it("neither links nor deletes another memo's resource, referenced or not", () => {
+    const foreign = resource(5, { memo: "memos/9" });
+    for (const content of ["![](/file/resources/5/img5.png)", "dropped"]) {
+      const output = reconcile({ content, knownResources: [foreign], uploadedThisSession: [] });
+      expect(linked(output)).toEqual([]);
+      expect(deleted(output)).toEqual([]);
+    }
+  });
+
+  it("treats an upload referenced only by another origin URL as unreferenced and deletes it", () => {
+    const output = reconcile({ content: "![](https://example.com/file/resources/1/img1.png)", uploadedThisSession: [resource(1)] });
+    expect(linked(output)).toEqual([]);
+    expect(deleted(output)).toEqual(["resources/1"]);
+  });
+
+  it("does not delete unused resources from an earlier session (draft images stay for manual cleanup)", () => {
+    const output = reconcile({ content: "nothing", knownResources: [resource(3)] });
+    expect(deleted(output)).toEqual([]);
+  });
+});
+
+describe("cancelCleanup", () => {
+  it("deletes this session's uploads that still belong to no memo", () => {
+    const uploads = [resource(1), resource(2, { memo: "memos/1" })];
+    expect(cancelCleanup(uploads).map((r) => r.name)).toEqual(["resources/1"]);
   });
 });

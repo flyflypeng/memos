@@ -34,7 +34,7 @@ import { classifyTransfer, InlineImageUpload, pastedImageFilename, uploadInlineI
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
-import { ReconcileInput, reconcileResources } from "./reconcileResources";
+import { ReconcileInput, ReconcileOutput, cancelCleanup, reconcileResources } from "./reconcileResources";
 import { MemoEditorContext } from "./types";
 
 export interface Props {
@@ -336,7 +336,7 @@ const MemoEditor = (props: Props) => {
   // The resources to save with the Memo (ADR 0002). The user's own resources are fetched only when
   // the content references one this session doesn't know, e.g. an image in a draft from before a
   // refresh; resources of other users are never resolved, so they are never linked.
-  const resolveResourcesToLink = async (content: string): Promise<Resource[]> => {
+  const reconcileForSave = async (content: string): Promise<ReconcileOutput> => {
     const origin = window.location.origin;
     const input: ReconcileInput = {
       original: originalRef.current,
@@ -353,7 +353,12 @@ const MemoEditor = (props: Props) => {
     if (unresolved) {
       input.knownResources = await resourceStore.fetchResources();
     }
-    return reconcileResources(input).linkToMemo;
+    return reconcileResources(input);
+  };
+
+  // Best effort: a resource that fails to delete stays under "Unused resources" for manual cleanup.
+  const deleteResources = async (resources: Resource[]) => {
+    await Promise.allSettled(resources.map((resource) => resourceStore.deleteResource(resource.name)));
   };
 
   const handleSaveBtnClick = async () => {
@@ -370,7 +375,7 @@ const MemoEditor = (props: Props) => {
     });
     const content = editorRef.current?.getContent() ?? "";
     try {
-      const resources = await resolveResourcesToLink(content);
+      const { linkToMemo: resources, deleteUnused } = await reconcileForSave(content);
       // Update memo.
       if (memoName) {
         const prevMemo = await memoStore.getOrFetchMemoByName(memoName);
@@ -430,6 +435,8 @@ const MemoEditor = (props: Props) => {
           onConfirm(memo.name);
         }
       }
+      // Only after the Memo is saved: a failed save must not lose the uploads.
+      void deleteResources(deleteUnused);
       editorRef.current?.setContent("");
       sessionUploadsRef.current = [];
     } catch (error: any) {
@@ -451,6 +458,12 @@ const MemoEditor = (props: Props) => {
 
   const handleCancelBtnClick = () => {
     localStorage.removeItem(contentCacheKey);
+    // Editing an existing Memo has no draft to come back to, so its unowned uploads are dropped. A
+    // new Memo's draft keeps its images; after a refresh they show under "Unused resources".
+    if (memoName) {
+      void deleteResources(cancelCleanup(sessionUploadsRef.current));
+      sessionUploadsRef.current = [];
+    }
 
     if (onCancel) {
       onCancel();
