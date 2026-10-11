@@ -4,7 +4,7 @@
 
 **被阻塞于：** 02、06
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 剪贴板含有非空文本时粘贴文本；只有图片文件时作为内嵌图片上传；其他文件作为附件
 - [ ] 上传期间在插入位置显示占位符，期间继续输入不会错位；成功后替换为 `![](/file/resources/{id}/pasted-YYYYMMDD-HHmmss.<ext>)`；失败则移除占位符并提示
