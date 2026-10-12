@@ -4,6 +4,18 @@
 
 本文档记录了此分支相对于原版 [usememos/memos v0.23.0](https://github.com/usememos/memos/releases/tag/v0.23.0) 的所有重要更改。
 
+## 未发布
+
+### 新功能
+- Memo 正文改由浏览器使用符合 GFM 规范的渲染器渲染：表格中的转义竖线、行内代码或链接中的竖线、空单元格、两侧不留空格的单元格、列数不齐的行、`<br>` 和列对齐都能正确显示；支持安全的内联 HTML（`<details>`、`<kbd>` 等），并经过消毒
+- 新的 CodeMirror 6 编辑器：Markdown 语法高亮、格式栏、「编辑 | 预览」切换、表格辅助（插入、Tab/Enter 移动、格式化、自动转义 `|`）以及斜杠命令
+- 粘贴或拖放的图片作为内嵌图片插入光标处；图片仍关联到所在 Memo（可见性相同，随 Memo 一起删除），不再在附件列表中重复显示；从正文删除图片引用并保存后，图片随之删除
+- 可安装为 PWA：缓存应用外壳、提示新版本、标题栏颜色跟随主题
+- 全站使用新的紫色 Logo，包括 favicon、PWA 图标和应用内图标
+
+### 不兼容变更
+- 移除 `Memo.nodes` 字段，以及 `ParseMarkdown`、`RestoreMarkdownNodes`、`StringifyMarkdownNodes` 三个 RPC；依赖 `nodes` 渲染的客户端需要改为解析 `content`
+
 ## [v0.32.3](https://github.com/chriscurrycc/memos/releases/tag/v0.32.3) - 2026-04-17
 
 ### 修复

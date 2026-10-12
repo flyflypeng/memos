@@ -4,6 +4,18 @@
 
 All notable changes to this fork compared to the original [usememos/memos v0.23.0](https://github.com/usememos/memos/releases/tag/v0.23.0).
 
+## Unreleased
+
+### Features
+- Memo content is now rendered in the browser with a GFM-compliant renderer: tables with escaped pipes, pipes in inline code or links, empty or unpadded cells, uneven rows, `<br>` and column alignment all render correctly; safe inline HTML (`<details>`, `<kbd>`, …) is supported and sanitized
+- New CodeMirror 6 editor with Markdown syntax highlighting, a format bar, an Edit/Preview switch, table helpers (insert, Tab/Enter navigation, format, auto-escape `|`) and slash commands
+- Pasted and dropped images are inserted at the cursor as inline images; they stay linked to the memo (same visibility, deleted with it) and are no longer repeated in the attachment list. Removing an image from the text deletes it on save
+- Installable PWA with a cached app shell, an update prompt and a theme-aware title bar
+- New purple logo across the favicon, PWA icons and the app
+
+### Breaking changes
+- `Memo.nodes` and the `ParseMarkdown`, `RestoreMarkdownNodes` and `StringifyMarkdownNodes` RPCs are removed; clients that render `nodes` must parse `content` instead
+
 ## [v0.32.3](https://github.com/chriscurrycc/memos/releases/tag/v0.32.3) - 2026-04-17
 
 ### Fixes
