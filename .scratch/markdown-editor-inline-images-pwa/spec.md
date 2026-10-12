@@ -235,17 +235,22 @@ Status: ready-for-agent
   - 运行 vitest、`go test ./...`，以及 `cd web && pnpm lint --fix`（每次提交前都要运行）。
   - 更新 CHANGELOG.md 和 CHANGELOG_zh.md。
   - 开发机上不运行 `pnpm release`，不编译正式二进制，也不运行 `docker build`。
-- **代码同步。** 三个阶段全部完成后，把功能分支一次性推送到 `origin`（https://github.com/flyflypeng/memos），NAS 从那里拉取。
+- **代码同步。** 三个阶段全部完成后，把功能分支一次性推送到 `origin`（https://github.com/flyflypeng/memos），构建机从那里拉取。
   - 本地 `main` 领先 `origin/main` 57 个提交，可以快进；功能分支从本地 `main` 创建。
   - 不打 tag。打 `v*` tag 会触发 docker-build 工作流，它会向 Docker Hub 的 `chriscurrycc/memos` 推送镜像。
-- **在 NAS 上做的事（编译与镜像构建）。** NAS 为极空间 Z4Pro，x86_64，8 核，15 GiB 内存，已安装 git 2.34、Docker 26.1、Compose v2.21，并能访问 GitHub。
-  1. 通过 SSH 登录 NAS。连接方式见用户全局记忆和 PersonalWorkflow 运行手册：有局域网入口和 FRP 入口，在家用局域网入口，外出用 FRP 入口。主机名、端口和用户名不要写进本仓库，因为本仓库会被推送到公开的 GitHub。
-  2. 把仓库克隆或更新到 NAS 用户数据目录下单独的源码目录，然后 checkout 功能分支。这个目录不能放在现有 memos 的数据卷目录中，那里存着生产数据库 `memos_prod.db`。
-  3. 在仓库根目录执行 `sudo docker build -t memos-local:<短提交哈希> .`，按 NAS 本机架构构建 linux/amd64 镜像。Dockerfile 已经包含前端构建和 Go 编译两个阶段。
-  4. 当前普通用户无权访问 Docker socket，所以需要 sudo。sudo 密码由用户在终端中交互输入，不能写进命令参数、脚本、仓库或日志。
-- **切换线上容器。** 现有服务由 NAS 上的 Compose 文件运行，使用 `chriscurrycc/memos:latest` 镜像，并挂载生产数据目录。把它改为 `memos-local:<短提交哈希>` 并重建容器，这一步只有在用户明确确认后才执行。本次改动不涉及数据库迁移。
+- **在构建机上做的事（编译与镜像构建）。** 构建机为用户的 shanghai-ali-ecs-64c（x86_64，64 核，Docker 29 + buildx，免密 sudo；Docker 守护进程和 git 访问 GitHub 都要经过内网 HTTP 代理）。
+  1. 把功能分支克隆或更新到构建机上的独立目录，然后 checkout 功能分支。
+  2. 执行 `sudo docker build`，通过 `--build-arg` 传入代理变量，构建 linux/amd64 镜像，标签为 `ghcr.io/flyflypeng/memos:<短提交哈希>`，并带上 `org.opencontainers.image.source` 标签。Dockerfile 已经包含前端构建和 Go 编译两个阶段。
+  3. 在构建机上用临时端口和临时数据目录启动镜像做冒烟测试，测完删除容器和数据。
+  4. 推送到 ghcr.io 私有仓库。token 取自本机 `gh auth token`（需要 `write:packages` 权限），经 SSH 标准输入传给 `docker login --password-stdin`，使用临时 `DOCKER_CONFIG` 目录，推送后立即删除。token 不能出现在命令参数、日志或仓库中。另外打一个可移动标签 `feat-markdown-editor`。
+- **切换线上容器。** 现有服务由 NAS 上的 Compose 文件运行，使用 `chriscurrycc/memos:latest` 镜像，并挂载生产数据目录。
+  - 切换前备份 Compose 文件和 `memos_prod.db`。
+  - NAS 用只读的 `read:packages` token 登录 ghcr.io 拉取镜像。
+  - 把 Compose 中的镜像改为 `ghcr.io/flyflypeng/memos:<短提交哈希>`，然后重建容器。
+  - 这些操作需要 sudo，由用户在自己的终端中执行，并且只有在用户明确确认后才执行。本次改动不涉及数据库迁移。
+  - NAS 的连接方式见用户全局记忆和 PersonalWorkflow 运行手册。主机名、端口和用户名不要写进本仓库，因为本仓库会被推送到公开的 GitHub。
 - **最终检查。**
-  - NAS 上 `docker build` 成功。
+  - 构建机上 `docker build` 成功，冒烟测试通过，镜像已推送到 ghcr.io。
   - 切换镜像后，通过现有 HTTPS 域名完成人工验收。
 
 ## 测试决定
