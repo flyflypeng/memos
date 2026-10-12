@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { SquarePenIcon } from "lucide-react";
 import { PhotoProvider } from "react-photo-view";
 import MemoContent from "@/components/MemoContent";
-import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
+import { memoAttachments } from "@/components/MemoContent/markdown/resourceReferences";
 import MemoLocationView from "@/components/MemoLocationView";
 import MemoReactionListView from "@/components/MemoReactionListView";
 import MemoRelationListView from "@/components/MemoRelationListView";
@@ -27,7 +27,7 @@ const ReviewMemoCard = ({ memo, onEdit, dateDisplay = "date", className, headerS
   const formatTime = (date: Date) =>
     dateDisplay === "time" ? date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }) : formatMemoDate(date, locale);
   const referencedMemos = memo.relations.filter((relation) => relation.type === MemoRelation_Type.REFERENCE);
-  const attachments = excludeReferencedResources(memo.resources, memo.content, window.location.origin);
+  const attachments = memoAttachments(memo);
 
   return (
     <div

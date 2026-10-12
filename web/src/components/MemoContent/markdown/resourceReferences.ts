@@ -1,5 +1,6 @@
 import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
+import { Memo } from "@/types/proto/api/v1/memo_service";
 import { Resource } from "@/types/proto/api/v1/resource_service";
 import { parseMemoMarkdown } from "./pipeline";
 
@@ -53,3 +54,7 @@ export const excludeReferencedResources = (resources: Resource[], content: strin
   const references = extractResourceReferences(content, origin);
   return resources.filter((resource) => !isReferenced(resource, references));
 };
+
+// memoAttachments returns a Memo's attachments, as the Memo views list them on this site.
+export const memoAttachments = (memo: Pick<Memo, "resources" | "content">): Resource[] =>
+  excludeReferencedResources(memo.resources, memo.content, window.location.origin);

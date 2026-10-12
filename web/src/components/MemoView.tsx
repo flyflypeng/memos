@@ -18,7 +18,7 @@ import { isSuperUser } from "@/utils/user";
 import ExportModal from "./ExportModal";
 import MemoActionMenu from "./MemoActionMenu";
 import MemoContent from "./MemoContent";
-import { excludeReferencedResources } from "./MemoContent/markdown/resourceReferences";
+import { memoAttachments } from "./MemoContent/markdown/resourceReferences";
 import MemoEditor from "./MemoEditor";
 import MemoLocationView from "./MemoLocationView";
 import MemoReactionistView from "./MemoReactionListView";
@@ -63,10 +63,7 @@ const MemoView: React.FC<Props> = (props: Props) => {
     WorkspaceMemoRelatedSetting.fromPartial({});
   const referencedMemos = memo.relations.filter((relation) => relation.type === MemoRelation_Type.REFERENCE);
   // Resources the content references are inline images; only the rest are listed as attachments.
-  const attachments = useMemo(
-    () => excludeReferencedResources(memo.resources, memo.content, window.location.origin),
-    [memo.resources, memo.content],
-  );
+  const attachments = useMemo(() => memoAttachments(memo), [memo.resources, memo.content]);
   const commentAmount = memo.relations.filter(
     (relation) => relation.type === MemoRelation_Type.COMMENT && relation.relatedMemo?.name === memo.name,
   ).length;

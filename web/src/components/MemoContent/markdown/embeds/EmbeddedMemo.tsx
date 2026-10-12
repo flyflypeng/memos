@@ -8,6 +8,7 @@ import { useMemoStore } from "@/store/v1";
 import { useTranslate } from "@/utils/i18n";
 import MemoContent from "../..";
 import { RendererContext } from "../../types";
+import { memoAttachments } from "../resourceReferences";
 import EmbedError from "./EmbedError";
 
 interface Props {
@@ -70,7 +71,7 @@ const EmbeddedMemo = ({ uid, params }: Props) => {
         contentClassName={inlineMode ? "" : "line-clamp-3"}
         parentPage={context.parentPage}
       />
-      <MemoResourceListView resources={memo.resources} />
+      <MemoResourceListView resources={memoAttachments(memo)} />
     </>
   );
   if (inlineMode) {

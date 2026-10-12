@@ -91,6 +91,17 @@ describe("MemoContent from Memo content: embedded memos", () => {
     expect(screen.getAllByText("Loop A")).toHaveLength(1);
     expect(screen.getAllByText("Loop B")).toHaveLength(1);
   });
+
+  it("lists only the embedded memo's attachments below it, not its inline images", async () => {
+    const memo = addMemo(20, "embed-inline-image", "Shot:\n\n![](/file/resources/21/shot.png)");
+    memo.resources = [
+      Resource.fromPartial({ name: "resources/21", uid: "r21", filename: "shot.png", type: "image/png", memo: memo.name }),
+      Resource.fromPartial({ name: "resources/22", uid: "r22", filename: "report.pdf", type: "application/pdf", memo: memo.name }),
+    ];
+    const { container } = renderMemo("![[memos/embed-inline-image]]");
+    expect(await screen.findByText("report.pdf")).toBeInTheDocument();
+    expect(Array.from(container.querySelectorAll("img"), (img) => img.getAttribute("src"))).toEqual(["/file/resources/21/shot.png"]);
+  });
 });
 
 describe("MemoContent from Memo content: embedded resources", () => {

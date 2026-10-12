@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import useLocalStorage from "react-use/lib/useLocalStorage";
 import MemoContent from "@/components/MemoContent";
-import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
+import { memoAttachments } from "@/components/MemoContent/markdown/resourceReferences";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import { memoServiceClient } from "@/grpcweb";
@@ -156,7 +156,7 @@ const MemoEditor = (props: Props) => {
         ...prevState,
         memoVisibility: memo.visibility,
         // Resources the saved content references are inline images, not attachments.
-        resourceList: excludeReferencedResources(memo.resources, memo.content, window.location.origin),
+        resourceList: memoAttachments(memo),
         relationList: memo.relations,
         location: memo.location,
       }));
