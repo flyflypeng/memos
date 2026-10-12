@@ -76,9 +76,24 @@ const markdownProcessor = unified()
 
 // parseMemoMarkdown parses Memo content into the mdast tree the renderer works from. The content is
 // also the transformers' file, for plugins that need the source text.
+// One Memo's content is read by several views in the same render (the content itself, its
+// attachment list, the task actions), so trees are cached by content, most recently used last.
+// Callers must treat the tree as read-only.
 // The plugin list is a `PluggableList`, which erases the tree type; remark transforms keep a Root.
-export const parseMemoMarkdown = (content: string) =>
-  markdownProcessor.runSync(markdownProcessor.parse(content), content) as MdastRoot;
+const PARSE_CACHE_SIZE = 200;
+const parsedTrees = new Map<string, MdastRoot>();
+
+export const parseMemoMarkdown = (content: string): MdastRoot => {
+  let tree = parsedTrees.get(content);
+  if (tree) {
+    parsedTrees.delete(content);
+  } else {
+    tree = markdownProcessor.runSync(markdownProcessor.parse(content), content) as MdastRoot;
+    if (parsedTrees.size >= PARSE_CACHE_SIZE) parsedTrees.delete(parsedTrees.keys().next().value!);
+  }
+  parsedTrees.set(content, tree);
+  return tree;
+};
 
 const htmlProcessor = unified()
   .use(remarkRehype, {
