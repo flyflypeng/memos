@@ -128,7 +128,8 @@ describe("MemoContent from Memo content: line-based blocks like the previous ren
 
 describe("MemoContent from Memo content: the same content in several views", () => {
   it("renders the same content the same way every time", () => {
-    const content = "# T #tag\n\n- [x] done ==hi==\n- [ ] todo\n\n| a | b |\n| :-- | --: |\n| 1 | 2 |\n\n![](/file/resources/1/a.png) [^1]\n\n[^1]: note";
+    const content =
+      "# T #tag\n\n- [x] done ==hi==\n- [ ] todo\n\n| a | b |\n| :-- | --: |\n| 1 | 2 |\n\n![](/file/resources/1/a.png) [^1]\n\n[^1]: note";
     const first = renderMemo(content).container.innerHTML;
     const second = renderMemo(content).container.innerHTML;
     expect(second).toBe(first);

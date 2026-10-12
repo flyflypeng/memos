@@ -1,6 +1,6 @@
 import type { Parent, PhrasingContent, Root, RootContent, Text } from "mdast";
-import { EXIT, visit } from "unist-util-visit";
 import type { ReactNode } from "react";
+import { EXIT, visit } from "unist-util-visit";
 import Highlight from "../../Highlight";
 import Spoiler from "../../Spoiler";
 import Subscript from "../../Subscript";

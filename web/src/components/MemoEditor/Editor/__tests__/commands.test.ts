@@ -1,6 +1,7 @@
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { EditorSelection, StateCommand } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
+import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import {
   continueMarkup,
   insertCodeBlock,
@@ -11,7 +12,6 @@ import {
   toggleLinePrefix,
   toggleWrap,
 } from "../commands";
-import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import { memoCompletionSource, tagCompletionSource } from "../completions";
 
 const run = (command: StateCommand, marked: string) => {

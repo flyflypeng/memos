@@ -1,6 +1,6 @@
 import { EditorState, TransactionSpec } from "@codemirror/state";
-import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import { describe, expect, it } from "vitest";
+import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import {
   classifyTransfer,
   insertUploadPlaceholders,

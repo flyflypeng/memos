@@ -284,17 +284,11 @@ const MemoEditor = (props: Props) => {
   const insertInlineImages = async (view: EditorView, uploads: InlineImageUpload[], range: { from: number; to: number }) => {
     setInlineUploadCount((count) => count + 1);
     try {
-      const resources = await uploadInlineImages(
-        view,
-        uploads,
-        range,
-        createResourceFromFile,
-        (error) => {
-          console.error(error);
-          const details = error instanceof Error && "details" in error && typeof error.details === "string" ? error.details : "";
-          toast.error(details || t("editor.image-upload-failed"));
-        },
-      );
+      const resources = await uploadInlineImages(view, uploads, range, createResourceFromFile, (error) => {
+        console.error(error);
+        const details = error instanceof Error && "details" in error && typeof error.details === "string" ? error.details : "";
+        toast.error(details || t("editor.image-upload-failed"));
+      });
       sessionUploadsRef.current.push(...resources);
     } finally {
       setInlineUploadCount((count) => count - 1);
