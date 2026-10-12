@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { useEffect, useState } from "react";
 import MemoResourceListView from "@/components/MemoResourceListView";
 import { useResourceStore } from "@/store/v1";
 import EmbedError from "./EmbedError";
+import { usePendingFetch } from "./usePendingFetch";
 
 interface Props {
   uid: string;
@@ -17,15 +17,9 @@ const EmbeddedResource = ({ uid, params }: Props) => {
   const fetchResourceByUID = useResourceStore((state) => state.fetchResourceByUID);
   // The store keys resources by name, so the embed looks the resource up by its UID.
   const resource = useResourceStore((state) => Object.values(state.resourceMapByName).find((r) => r.uid === uid));
-  const [loading, setLoading] = useState(!resource);
+  const pending = usePendingFetch(uid, resource, fetchResourceByUID);
 
-  useEffect(() => {
-    fetchResourceByUID(uid)
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, [uid]);
-
-  if (loading && !resource) {
+  if (pending) {
     return null;
   }
   if (!resource) {

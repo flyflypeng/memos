@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { QuoteIcon } from "lucide-react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo } from "react";
 import MemoResourceListView from "@/components/MemoResourceListView";
 import Tooltip from "@/components/ui/Tooltip";
 import useNavigateTo from "@/hooks/useNavigateTo";
@@ -10,6 +10,7 @@ import MemoContent from "../..";
 import { RendererContext } from "../../types";
 import { memoAttachments } from "../resourceReferences";
 import EmbedError from "./EmbedError";
+import { usePendingFetch } from "./usePendingFetch";
 
 interface Props {
   uid: string;
@@ -24,13 +25,7 @@ const EmbeddedMemo = ({ uid, params }: Props) => {
   const navigateTo = useNavigateTo();
   const fetchMemoByUid = useMemoStore((state) => state.fetchMemoByUid);
   const memo = useMemoStore((state) => state.memoMapByUid[uid]);
-  const [loading, setLoading] = useState(!memo);
-
-  useEffect(() => {
-    fetchMemoByUid(uid)
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, [uid]);
+  const pending = usePendingFetch(uid, memo, fetchMemoByUid);
 
   // The memos on the path from the outermost memo down to this embed, by memo name. The embedded
   // memo renders with its own name as memoName, so its embeds see the whole path; a memo already
@@ -40,7 +35,7 @@ const EmbeddedMemo = ({ uid, params }: Props) => {
     [context.embeddedMemos, context.memoName],
   );
 
-  if (loading && !memo) {
+  if (pending) {
     return (
       <div className="w-full px-2 py-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 text-xs border border-gray-200 dark:border-zinc-700 animate-pulse">
         <div className="h-2.5 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-1.5" />

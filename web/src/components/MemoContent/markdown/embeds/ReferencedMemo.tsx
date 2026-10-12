@@ -1,8 +1,9 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { useMemoStore } from "@/store/v1";
 import { RendererContext } from "../../types";
 import EmbedError from "./EmbedError";
+import { usePendingFetch } from "./usePendingFetch";
 
 interface Props {
   uid: string;
@@ -15,15 +16,9 @@ const ReferencedMemo = ({ uid, params }: Props) => {
   const context = useContext(RendererContext);
   const fetchMemoByUid = useMemoStore((state) => state.fetchMemoByUid);
   const memo = useMemoStore((state) => state.memoMapByUid[uid]);
-  const [loading, setLoading] = useState(!memo);
+  const pending = usePendingFetch(uid, memo, fetchMemoByUid);
 
-  useEffect(() => {
-    fetchMemoByUid(uid)
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, [uid]);
-
-  if (loading && !memo) {
+  if (pending) {
     return <span className="inline-block h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse align-middle" />;
   }
   if (!memo) {

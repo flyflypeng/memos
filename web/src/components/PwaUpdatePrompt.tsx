@@ -1,7 +1,7 @@
-import { Button } from "@mui/joy";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useRegisterSW } from "virtual:pwa-register/react";
+import Button from "@/components/ui/Button";
 import { useTranslate } from "@/utils/i18n";
 
 const TOAST_ID = "pwa-update";
@@ -22,7 +22,7 @@ const PwaUpdatePrompt = () => {
       () => (
         <div className="flex items-center gap-3">
           <span>{t("pwa.new-version-available")}</span>
-          <Button size="sm" onClick={() => updateServiceWorker(true)}>
+          <Button size="sm" color="primary" onClick={() => updateServiceWorker(true)}>
             {t("pwa.refresh")}
           </Button>
         </div>
