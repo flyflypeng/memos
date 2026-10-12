@@ -90,6 +90,42 @@ describe("MemoContent from Memo content: tables", () => {
   });
 });
 
+describe("MemoContent from Memo content: line-based blocks like the previous renderer", () => {
+  it("renders a text line followed by --- as a paragraph and a divider, not a heading", () => {
+    const { container } = renderMemo("今天很忙\n---\n明天");
+    expect(container.querySelector("h1, h2")).toBeNull();
+    expect(Array.from(container.querySelectorAll("p, hr, h1, h2"), (el) => [el.tagName, el.textContent])).toEqual([
+      ["P", "今天很忙"],
+      ["HR", ""],
+      ["P", "明天"],
+    ]);
+  });
+
+  it("renders a text line followed by === as text, not a heading", () => {
+    const { container } = renderMemo("标题\n===");
+    expect(container.querySelector("h1, h2")).toBeNull();
+    expect(container.querySelector("p")).toHaveTextContent(/^标题\s*===$/);
+  });
+
+  it("renders a line followed by --- as a divider, not a table", () => {
+    const { container } = renderMemo("a\n---");
+    expect(container.querySelector("table, h2")).toBeNull();
+    expect(container.querySelector("hr")).not.toBeNull();
+  });
+
+  it("renders a line indented by four spaces as text, not a code block", () => {
+    const { container } = renderMemo("段落\n\n    缩进的一行");
+    expect(container.querySelector("pre, code")).toBeNull();
+    expect(screen.getByText("缩进的一行").tagName).toBe("P");
+  });
+
+  it("still nests a list indented by four spaces", () => {
+    const { container } = renderMemo("- a\n    - b\n        - c");
+    expect(container.querySelector("ul ul ul li")).toHaveTextContent("c");
+    expect(container.querySelector("pre, code")).toBeNull();
+  });
+});
+
 describe("MemoContent from Memo content: HTML", () => {
   it("renders allowed inline HTML", () => {
     const { container } = renderMemo(

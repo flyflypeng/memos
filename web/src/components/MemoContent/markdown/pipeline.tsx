@@ -36,6 +36,12 @@ function remarkTaskMarkerOffset(this: Processor) {
   });
 }
 
+// The previous renderer (gomark) reads Memo content line by line: a line followed by `---` or `===`
+// is not a heading, and indentation never makes a code block. Existing Memos keep those readings.
+function remarkLineBasedBlocks(this: Processor) {
+  (this.data().micromarkExtensions ??= []).push({ disable: { null: ["setextUnderline", "codeIndented"] } });
+}
+
 // GitHub-style allowlist, narrowed to http/https/mailto/relative links. Memos elements and task
 // offsets are allowed only as camelCase properties, which raw HTML cannot produce (the HTML parser
 // lowercases attribute names), so hand-written `<memos-element>` tags render as plain children.
@@ -64,6 +70,7 @@ const markdownProcessor = unified()
   .use(remarkMath)
   // A newline inside a paragraph is a line break, as in the previous renderer.
   .use(remarkBreaks)
+  .use(remarkLineBasedBlocks)
   .use(remarkTaskMarkerOffset)
   .use(memoMarkdownPlugins.flatMap((plugin) => plugin.remarkPlugins ?? []));
 

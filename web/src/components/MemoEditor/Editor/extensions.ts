@@ -1,5 +1,4 @@
 // The single place where the Memo editor's CodeMirror extensions are assembled.
-// See `/Users/minimax/.omp/work/memos-impl/06-notes.md` for where each kind of extension goes.
 import { autocompletion, closeCompletion, completionKeymap, CompletionSource } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { deleteMarkupBackward, markdown, markdownLanguage } from "@codemirror/lang-markdown";
@@ -44,10 +43,20 @@ export const markdownShortcutKeymap = (enabled: () => boolean): KeyBinding[] =>
     { key: "Mod-k", run: insertLink() },
   ].map(({ key, run }) => ({ key, preventDefault: true, run: (view) => enabled() && run(view) }));
 
+// The editor's Markdown language. Setext headings and indented code are off, as in the renderer, so
+// the editor reads blocks the way the Memo is displayed. addKeymap: false — Enter/Backspace are bound
+// in `createEditorExtensions` so list behavior lives in `commands.ts`.
+export const memoMarkdown = () =>
+  markdown({
+    base: markdownLanguage,
+    codeLanguages: languages,
+    addKeymap: false,
+    extensions: { remove: ["SetextHeading", "IndentedCode"] },
+  });
+
 export const createEditorExtensions = (options: EditorExtensionOptions): Extension[] => [
   history(),
-  // addKeymap: false — Enter/Backspace are bound below so list behavior lives in `commands.ts`.
-  markdown({ base: markdownLanguage, codeLanguages: languages, addKeymap: false }),
+  memoMarkdown(),
   syntaxHighlighting(classHighlighter),
   EditorView.lineWrapping,
   EditorState.tabSize.of(TAB_SPACE_WIDTH),
