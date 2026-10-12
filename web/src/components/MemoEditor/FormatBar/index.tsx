@@ -3,6 +3,7 @@ import { EditorView } from "@codemirror/view";
 import clsx from "clsx";
 import {
   BoldIcon,
+  CircleHelpIcon,
   CodeIcon,
   HeadingIcon,
   ItalicIcon,
@@ -100,6 +101,16 @@ const FormatBar = ({ className, getView, previewing, onPreviewChange }: Props) =
           return action.popover ? <FormatPopover key={action.id} trigger={button} content={action.popover} onApply={runCommand} /> : button;
         })}
       </div>
+      <a
+        className="shrink-0 p-1 rounded text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-zinc-700"
+        href="https://www.usememos.com/docs/usage/writing-markdown"
+        target="_blank"
+        rel="noopener noreferrer"
+        title={t("editor.format.syntax-help")}
+        aria-label={t("editor.format.syntax-help")}
+      >
+        <CircleHelpIcon className="w-4 h-4" />
+      </a>
       <div className="shrink-0 flex flex-row items-center text-xs rounded border border-gray-200 dark:border-zinc-600 overflow-hidden">
         {[false, true].map((preview) => (
           <button

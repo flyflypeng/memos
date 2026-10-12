@@ -138,7 +138,8 @@
       "link": "Link",
       "math": "Formula",
       "table": "Insert table",
-      "format-table": "Format table"
+      "format-table": "Format table",
+      "syntax-help": "Markdown syntax"
     }
   },
   "inbox": {
@@ -437,11 +438,6 @@
     "delete-confirm": "Are you sure to delete this tag? All related memos will be archived.",
     "delete-tag": "Delete Tag",
     "no-tag-found": "No tag found"
-  },
-  "markdown": {
-    "code-block": "Code block",
-    "checkbox": "Checkbox",
-    "content-syntax": "Content syntax"
   },
   "review": {
     "title": "Review",

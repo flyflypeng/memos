@@ -133,7 +133,8 @@
       "link": "連結",
       "math": "公式",
       "table": "插入表格",
-      "format-table": "格式化表格"
+      "format-table": "格式化表格",
+      "syntax-help": "Markdown 語法"
     }
   },
   "inbox": {

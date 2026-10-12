@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import useClickAway from "react-use/lib/useClickAway";
 import Button from "@/components/ui/Button";
 import OverflowTip from "@/components/ui/OverflowTip";
-import { useMemoTagList } from "@/store/v1";
+import { useSortedTags } from "@/store/v1";
 import { useTranslate } from "@/utils/i18n";
 import { EditorRefActions } from "../Editor";
 
@@ -17,10 +17,7 @@ const TagSelector = (props: Props) => {
   const { editorRef } = props;
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const tags = Object.entries(useMemoTagList())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .sort((a, b) => b[1] - a[1])
-    .map(([tag]) => tag);
+  const tags = useSortedTags().map(([tag]) => tag);
 
   useClickAway(containerRef, () => {
     setOpen(false);

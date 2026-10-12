@@ -26,7 +26,6 @@ import { resourceFromFile } from "@/utils/resource";
 import VisibilityIcon from "../VisibilityIcon";
 import AddMemoRelationPopover from "./ActionButton/AddMemoRelationPopover";
 import LocationSelector from "./ActionButton/LocationSelector";
-import MarkdownMenu from "./ActionButton/MarkdownMenu";
 import TagSelector from "./ActionButton/TagSelector";
 import UploadResourceButton from "./ActionButton/UploadResourceButton";
 import ZenModeButton from "./ActionButton/ZenModeButton";
@@ -610,7 +609,6 @@ const MemoEditor = (props: Props) => {
           >
             <div className="flex flex-row justify-start items-center gap-0 sm:gap-0.5 opacity-80 dark:opacity-60">
               <TagSelector editorRef={editorRef} />
-              <MarkdownMenu editorRef={editorRef} />
               <UploadResourceButton />
               <AddMemoRelationPopover editorRef={editorRef} />
               {workspaceMemoRelatedSetting.enableLocation && (

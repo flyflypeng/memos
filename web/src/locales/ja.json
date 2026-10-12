@@ -133,7 +133,8 @@
       "link": "リンク",
       "math": "数式",
       "table": "表を挿入",
-      "format-table": "表を整形"
+      "format-table": "表を整形",
+      "syntax-help": "Markdown 記法"
     }
   },
   "inbox": {

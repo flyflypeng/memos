@@ -170,11 +170,6 @@ export const useMemoMetadataStore = create(
   })),
 );
 
-export const useMemoTagList = () => {
-  const memoStore = useMemoMetadataStore();
-  return memoStore.getState().tagCounts;
-};
-
 export const useSortedTags = () => {
   const memoStore = useMemoMetadataStore();
   return memoStore.getState().sortedTags;

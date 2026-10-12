@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { memoServiceClient } from "@/grpcweb";
 import useCurrentUser from "@/hooks/useCurrentUser";
-import { useMemoTagList } from "@/store/v1";
+import { useSortedTags } from "@/store/v1";
 import { MemoView } from "@/types/proto/api/v1/memo_service";
 import { useTranslate } from "@/utils/i18n";
 import { insertTextSpec } from "./commands";
@@ -18,15 +18,11 @@ export interface EditorRefActions {
   focus: FunctionType;
   scrollToCursor: FunctionType;
   insertText: (text: string, prefix?: string, suffix?: string) => void;
-  removeText: (start: number, length: number) => void;
   setContent: (text: string) => void;
   getContent: () => string;
-  getSelectedContent: () => string;
   getCursorPosition: () => number;
-  setCursorPosition: (startPos: number, endPos?: number) => void;
   getCursorLineNumber: () => number;
   getLine: (lineNumber: number) => string;
-  setLine: (lineNumber: number, text: string) => void;
 }
 
 interface Props {
@@ -51,10 +47,7 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
   const latest = useRef({ props, tags: [] as string[], userName: "", t });
   latest.current.props = props;
   latest.current.t = t;
-  latest.current.tags = Object.entries(useMemoTagList())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .sort((a, b) => b[1] - a[1])
-    .map(([tag]) => tag);
+  latest.current.tags = useSortedTags().map(([tag]) => tag);
   latest.current.userName = useCurrentUser()?.name ?? "";
 
   useEffect(() => {
@@ -141,10 +134,6 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
         view.dispatch(insertTextSpec(view.state, text, prefix, suffix));
         view.focus();
       },
-      removeText: (start: number, length: number) => {
-        dispatch({ changes: { from: start, to: start + length }, selection: EditorSelection.cursor(start), userEvent: "delete" });
-        viewRef.current?.focus();
-      },
       setContent: (text: string) => {
         const current = state();
         if (!current) return;
@@ -156,14 +145,7 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
         });
       },
       getContent: () => state()?.doc.toString() ?? "",
-      getSelectedContent: () => {
-        const current = state();
-        return current ? current.sliceDoc(current.selection.main.from, current.selection.main.to) : "";
-      },
       getCursorPosition: () => state()?.selection.main.from ?? 0,
-      setCursorPosition: (startPos: number, endPos?: number) => {
-        dispatch({ selection: EditorSelection.range(startPos, isNaN(endPos as number) ? startPos : (endPos as number)) });
-      },
       getCursorLineNumber: () => {
         const current = state();
         return current ? current.doc.lineAt(current.selection.main.from).number - 1 : 0;
@@ -172,13 +154,6 @@ const Editor = forwardRef(function Editor(props: Props, ref: React.ForwardedRef<
         const current = state();
         if (!current || lineNumber < 0 || lineNumber >= current.doc.lines) return "";
         return current.doc.line(lineNumber + 1).text;
-      },
-      setLine: (lineNumber: number, text: string) => {
-        const current = state();
-        if (!current || lineNumber < 0 || lineNumber >= current.doc.lines) return;
-        const line = current.doc.line(lineNumber + 1);
-        dispatch({ changes: { from: line.from, to: line.to, insert: text }, userEvent: "input" });
-        viewRef.current?.focus();
       },
     };
   }, []);
