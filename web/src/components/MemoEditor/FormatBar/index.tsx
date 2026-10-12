@@ -82,7 +82,7 @@ const FormatBar = ({ className, getView, previewing, onPreviewChange }: Props) =
       onMouseDown={(e) => e.preventDefault()}
       onFocus={(e) => e.stopPropagation()}
     >
-      <div className="flex-1 min-w-0 flex flex-row items-center gap-0.5 overflow-x-auto scrollbar-hide">
+      <div className="flex-1 min-w-0 flex flex-row flex-wrap items-center gap-0.5">
         {formatActions.map((action) => {
           const label = t(`editor.format.${action.id}` as Translations);
           const button = (
