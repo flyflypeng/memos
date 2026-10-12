@@ -102,11 +102,12 @@ const InlineCode = ({ node }: Props<"code">) => {
   return languageOf(node) === "math" ? <Math content={content} /> : <Code content={content} />;
 };
 
+// Scaled against prose-sm's 14px body so headings stay proportionate in short memos.
 const HEADING_CLASS: Record<string, string> = {
-  h1: "text-5xl leading-normal font-bold",
-  h2: "text-3xl leading-normal font-medium",
-  h3: "text-xl leading-normal font-medium",
-  h4: "text-lg font-bold",
+  h1: "text-2xl font-bold",
+  h2: "text-xl font-semibold",
+  h3: "text-lg font-semibold",
+  h4: "text-base font-semibold",
 };
 
 const Heading = ({ node, children }: Props<"h1">) => {

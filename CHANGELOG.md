@@ -13,6 +13,9 @@ All notable changes to this fork compared to the original [usememos/memos v0.23.
 - Installable PWA with a cached app shell, an update prompt and a theme-aware title bar
 - New purple logo across the favicon, PWA icons and the app
 
+### Fixes
+- Memo headings are scaled to the 14px body text (H1–H4: 24/20/18/16px) instead of 48/30/20/18px, and their weight now decreases by level
+
 ### Breaking changes
 - `Memo.nodes` and the `ParseMarkdown`, `RestoreMarkdownNodes` and `StringifyMarkdownNodes` RPCs are removed; clients that render `nodes` must parse `content` instead
 

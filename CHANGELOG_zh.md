@@ -13,6 +13,9 @@
 - 可安装为 PWA：缓存应用外壳、提示新版本、标题栏颜色跟随主题
 - 全站使用新的紫色 Logo，包括 favicon、PWA 图标和应用内图标
 
+### 修复
+- Memo 标题字号按 14px 正文重新调整（H1–H4：24/20/18/16px，原为 48/30/20/18px），字重也改为随级别递减
+
 ### 不兼容变更
 - 移除 `Memo.nodes` 字段，以及 `ParseMarkdown`、`RestoreMarkdownNodes`、`StringifyMarkdownNodes` 三个 RPC；依赖 `nodes` 渲染的客户端需要改为解析 `content`
 
