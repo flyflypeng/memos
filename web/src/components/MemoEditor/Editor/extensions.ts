@@ -9,6 +9,7 @@ import { EditorView, KeyBinding, keymap, placeholder as placeholderExt } from "@
 import { classHighlighter } from "@lezer/highlight";
 import { TAB_SPACE_WIDTH } from "@/helpers/consts";
 import { continueMarkup, insertLink, insertTabSpaces, toggleWrap } from "./commands";
+import { isComposing } from "./composition";
 import { escapePipeSpec, formatTable, nextCell, previousCell, tableNewRow } from "./tableCommands";
 
 export interface EditorExtensionOptions {
@@ -32,8 +33,8 @@ const CONTAINER_KEYS: Record<string, true> = { "Mod-Enter": true, "Shift-Mod-Ent
 /** Wraps a binding so it never runs while an IME composition is active. */
 const imeSafe = (binding: KeyBinding): KeyBinding => ({
   ...binding,
-  run: binding.run && ((view) => !view.composing && !view.compositionStarted && binding.run!(view)),
-  shift: binding.shift && ((view) => !view.composing && !view.compositionStarted && binding.shift!(view)),
+  run: binding.run && ((view) => !isComposing(view) && binding.run!(view)),
+  shift: binding.shift && ((view) => !isComposing(view) && binding.shift!(view)),
 });
 
 export const markdownShortcutKeymap = (enabled: () => boolean): KeyBinding[] =>
@@ -82,7 +83,7 @@ export const createEditorExtensions = (options: EditorExtensionOptions): Extensi
     ),
   ),
   EditorView.inputHandler.of((view, from, to, text) => {
-    if (view.composing || view.compositionStarted) return false;
+    if (isComposing(view)) return false;
     const spec = escapePipeSpec(view.state, from, to, text);
     if (spec) view.dispatch(spec);
     return spec !== null;

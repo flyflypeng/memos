@@ -6,6 +6,7 @@ import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import { EditorSelection, EditorState, TransactionSpec } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tableSkeleton } from "./commands";
+import { isComposing } from "./composition";
 
 const CODE_NODES: Record<string, true> = { InlineCode: true, FencedCode: true, CodeBlock: true };
 
@@ -235,7 +236,7 @@ export const filterSlashItems = (items: SlashMenuItem[], query: string): SlashMe
 export const slashCompletionSource =
   (getItems: () => SlashMenuItem[]): CompletionSource =>
   (context): CompletionResult | null => {
-    if (context.view?.composing || context.view?.compositionStarted) return null;
+    if (isComposing(context.view)) return null;
     const trigger = slashTriggerAt(context.state, context.pos);
     if (!trigger) return null;
     const items = filterSlashItems(getItems(), trigger.query);

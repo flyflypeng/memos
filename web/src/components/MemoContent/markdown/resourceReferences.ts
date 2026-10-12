@@ -2,6 +2,7 @@ import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
 import { Memo } from "@/types/proto/api/v1/memo_service";
 import { Resource } from "@/types/proto/api/v1/resource_service";
+import { resourceNameFromUrl } from "@/utils/resource";
 import { parseMemoMarkdown } from "./pipeline";
 
 // The resources a Memo's content refers to: by name (`resources/{id}`, from `/file/resources/{id}/…`
@@ -10,14 +11,6 @@ export interface ResourceReferences {
   names: Set<string>;
   uids: Set<string>;
 }
-
-const RESOURCE_PATH = /^\/file\/(resources\/\d+)(?:[/?#]|$)/;
-
-// A site-relative `/file/resources/{id}/…` URL or the same URL on `origin`; other origins don't count.
-const resourceNameFromUrl = (url: string, origin: string): string | undefined => {
-  const path = url.startsWith(origin + "/") ? url.slice(origin.length) : url.startsWith("//") ? "" : url;
-  return RESOURCE_PATH.exec(path)?.[1];
-};
 
 const collectReferences = (tree: Root, origin: string): ResourceReferences => {
   const references: ResourceReferences = { names: new Set(), uids: new Set() };

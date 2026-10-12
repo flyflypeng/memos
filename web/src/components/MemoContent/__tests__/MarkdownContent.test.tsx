@@ -228,6 +228,14 @@ describe("MemoContent from Memo content: images", () => {
     expect(group.querySelector("br")).toBeNull();
     expect(paragraphs[1]).not.toHaveClass("flex");
   });
+
+  it("shows thumbnails for this site's resource URLs in a group, absolute or with a query", () => {
+    const { container } = renderMemo(`![a](${window.location.origin}/file/resources/1/a.png)\n![b](/file/resources/2/b.png?v=2)`);
+    expect(Array.from(container.querySelectorAll("img"), (img) => img.getAttribute("src"))).toEqual([
+      `${window.location.origin}/file/resources/1/a.png?thumbnail=true`,
+      "/file/resources/2/b.png?v=2&thumbnail=true",
+    ]);
+  });
 });
 
 describe("MemoContent from Memo content: standard markdown", () => {

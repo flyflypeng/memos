@@ -1,6 +1,7 @@
 // CodeMirror completion sources for `#tag` and `@memo`. React-free; data is injected.
 import { Completion, CompletionContext, CompletionResult, CompletionSource } from "@codemirror/autocomplete";
 import Fuse from "fuse.js";
+import { isComposing } from "./composition";
 
 /**
  * Finds the whitespace-delimited word around the cursor when it starts with `trigger`.
@@ -21,7 +22,7 @@ export const triggerWordAt = (context: CompletionContext, trigger: string): { fr
 export const tagCompletionSource =
   (getTags: () => string[]): CompletionSource =>
   (context): CompletionResult | null => {
-    if (context.view?.composing || context.view?.compositionStarted) return null;
+    if (isComposing(context.view)) return null;
     const word = triggerWordAt(context, "#");
     if (!word) return null;
     const options: Completion[] = new Fuse(getTags()).search(word.query.toLowerCase()).map(({ item }) => ({
@@ -45,7 +46,7 @@ export const MEMO_COMPLETION_DEBOUNCE_MS = 300;
 export const memoCompletionSource =
   (fetchMemos: (query: string) => Promise<MemoCompletionItem[]>, debounceMs = MEMO_COMPLETION_DEBOUNCE_MS): CompletionSource =>
   async (context): Promise<CompletionResult | null> => {
-    if (context.view?.composing || context.view?.compositionStarted) return null;
+    if (isComposing(context.view)) return null;
     const word = triggerWordAt(context, "@");
     if (!word) return null;
     if (debounceMs > 0) {

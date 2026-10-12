@@ -52,3 +52,13 @@ export const isImage = (t: string) => {
 const isPSD = (t: string) => {
   return t === "image/vnd.adobe.photoshop" || t === "image/x-photoshop" || t === "image/photoshop";
 };
+
+const RESOURCE_PATH = /^\/file\/(resources\/\d+)(?:[/?#]|$)/;
+
+// resourceNameFromUrl returns the resource name (`resources/{id}`) a URL serves when it is a Memos
+// resource URL on this site: site-relative `/file/resources/{id}/…` or the same path on `origin`.
+// Other origins and protocol-relative URLs don't count.
+export const resourceNameFromUrl = (url: string, origin: string): string | undefined => {
+  const path = url.startsWith(origin + "/") ? url.slice(origin.length) : url.startsWith("//") ? "" : url;
+  return RESOURCE_PATH.exec(path)?.[1];
+};

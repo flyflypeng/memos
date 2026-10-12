@@ -17,6 +17,7 @@ import { PhotoView } from "react-photo-view";
 import Checkbox from "@/components/ui/Checkbox";
 import { useScrollMask } from "@/hooks/useScrollMask";
 import { useMemoStore } from "@/store/v1";
+import { resourceNameFromUrl } from "@/utils/resource";
 import Code from "../Code";
 import CodeBlock from "../CodeBlock";
 import Link from "../Link";
@@ -61,16 +62,14 @@ const Paragraph = ({ node, children }: Props<"p">) => {
   );
 };
 
-const MEMOS_RESOURCE_PATH = /^\/file\/resources\/\d+\/[^?#]+$/;
-
+// In a group, this site's resource images show their thumbnail.
 const Image = ({ src = "", alt }: Props<"img">) => {
   const inImageGroup = useContext(ImageGroupContext);
-  const path = src.startsWith(window.location.origin) ? src.slice(window.location.origin.length) : src;
-  const thumbnail = inImageGroup && MEMOS_RESOURCE_PATH.test(path);
+  const thumbnail = inImageGroup && resourceNameFromUrl(src, window.location.origin) !== undefined;
   return (
     <PhotoView src={src}>
       <img
-        src={thumbnail ? `${src}?thumbnail=true` : src}
+        src={thumbnail ? `${src}${src.includes("?") ? "&" : "?"}thumbnail=true` : src}
         alt={alt}
         decoding="async"
         loading="lazy"
