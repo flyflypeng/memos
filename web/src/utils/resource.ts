@@ -1,5 +1,14 @@
 import { Resource } from "@/types/proto/api/v1/resource_service";
 
+// resourceFromFile builds the CreateResource payload for an uploaded file, named `filename`.
+export const resourceFromFile = async (file: File, filename = file.name) =>
+  Resource.fromPartial({
+    filename,
+    size: file.size,
+    type: file.type,
+    content: new Uint8Array(await file.arrayBuffer()),
+  });
+
 export const getResourceUrl = (resource: Resource) => {
   if (resource.externalLink) {
     return resource.externalLink;

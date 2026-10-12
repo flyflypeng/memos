@@ -22,6 +22,7 @@ import { WorkspaceMemoRelatedSetting } from "@/types/proto/api/v1/workspace_sett
 import { WorkspaceSettingKey } from "@/types/proto/store/workspace_setting";
 import { useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, convertVisibilityToString } from "@/utils/memo";
+import { resourceFromFile } from "@/utils/resource";
 import VisibilityIcon from "../VisibilityIcon";
 import AddMemoRelationPopover from "./ActionButton/AddMemoRelationPopover";
 import LocationSelector from "./ActionButton/LocationSelector";
@@ -226,6 +227,10 @@ const MemoEditor = (props: Props) => {
     }));
   };
 
+  // Uploads `file` as a new resource named `filename`; attachments and inline images alike.
+  const createResourceFromFile = async (file: File, filename: string) =>
+    resourceStore.createResource({ resource: await resourceFromFile(file, filename) });
+
   const handleUploadResource = async (file: File) => {
     setState((state) => {
       return {
@@ -234,18 +239,8 @@ const MemoEditor = (props: Props) => {
       };
     });
 
-    const { name: filename, size, type } = file;
-    const buffer = new Uint8Array(await file.arrayBuffer());
-
     try {
-      const resource = await resourceStore.createResource({
-        resource: Resource.fromPartial({
-          filename,
-          size,
-          type,
-          content: buffer,
-        }),
-      });
+      const resource = await createResourceFromFile(file, file.name);
       setState((state) => {
         return {
           ...state,
@@ -294,15 +289,7 @@ const MemoEditor = (props: Props) => {
         view,
         uploads,
         range,
-        async (file, filename) =>
-          resourceStore.createResource({
-            resource: Resource.fromPartial({
-              filename,
-              size: file.size,
-              type: file.type,
-              content: new Uint8Array(await file.arrayBuffer()),
-            }),
-          }),
+        createResourceFromFile,
         (error) => {
           console.error(error);
           const details = error instanceof Error && "details" in error && typeof error.details === "string" ? error.details : "";
@@ -329,6 +316,7 @@ const MemoEditor = (props: Props) => {
   };
 
   // Slash menu "Upload image": the editor has anchored the position; pick images and insert them there.
+  // Files are sorted as for paste and drop, so a picked non-image (e.g. a PSD) becomes an attachment.
   const handleSlashUploadImage = (view: EditorView) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -337,13 +325,16 @@ const MemoEditor = (props: Props) => {
     const finish = () => {
       const { position, spec } = takeUploadAnchor(view.state);
       view.dispatch(spec);
-      const files = Array.from(input.files ?? []).filter((file) => file.type.startsWith("image/"));
-      if (position === null || files.length === 0) return;
-      void insertInlineImages(
-        view,
-        files.map((file) => ({ file, filename: file.name })),
-        { from: position, to: position },
-      );
+      const action = classifyTransfer("", Array.from(input.files ?? []));
+      if (position === null || action.kind !== "files") return;
+      if (action.images.length > 0) {
+        void insertInlineImages(
+          view,
+          action.images.map((file) => ({ file, filename: file.name })),
+          { from: position, to: position },
+        );
+      }
+      if (action.attachments.length > 0) void uploadMultiFiles(action.attachments);
       view.focus();
     };
     input.addEventListener("change", finish, { once: true });

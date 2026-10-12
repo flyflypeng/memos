@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { useResourceStore } from "@/store/v1";
 import { Resource } from "@/types/proto/api/v1/resource_service";
+import { resourceFromFile } from "@/utils/resource";
 import { MemoEditorContext } from "../types";
 
 interface State {
@@ -39,16 +40,7 @@ const UploadResourceButton = () => {
         return;
       }
       for (const file of fileInputRef.current.files) {
-        const { name: filename, size, type } = file;
-        const buffer = new Uint8Array(await file.arrayBuffer());
-        const resource = await resourceStore.createResource({
-          resource: Resource.fromPartial({
-            filename,
-            size,
-            type,
-            content: buffer,
-          }),
-        });
+        const resource = await resourceStore.createResource({ resource: await resourceFromFile(file) });
         createdResourceList.push(resource);
       }
     } catch (error: any) {
