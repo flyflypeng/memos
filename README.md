@@ -23,6 +23,10 @@ Try it live without installing anything: **[memo-demo.chriscurry.cc](https://mem
 See [CHANGELOG.md](CHANGELOG.md) for a detailed list of features and improvements compared to the original Memos.
 
 **Highlights:**
+- GFM-compliant Markdown rendering: tables with escaped pipes, inline code, empty cells and column alignment render correctly
+- CodeMirror editor with syntax highlighting, format bar, Edit/Preview switch, table helpers and slash commands
+- Pasted and dropped images are embedded at the cursor instead of being appended as attachments
+- Installable as a desktop app (PWA), e.g. add it to the macOS Dock from Chrome, Edge or Safari
 - Tag management with pinning and emoji support
 - Export memos as beautiful images
 - Pinned memos displayed in separate column/drawer
@@ -34,7 +38,10 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of features and improvement
 ## Features
 
 - **Privacy First** - Self-hosted, your data stays with you
-- **Markdown Support** - Write with familiar markdown syntax, including task lists, code blocks, and more
+- **Markdown Support** - GFM-compliant rendering in the browser: tables, task lists, code blocks with syntax highlighting, math (KaTeX), Mermaid diagrams and sanitized inline HTML (`<details>`, `<kbd>`, `<br>`, …)
+- **Rich Editor** - CodeMirror 6 source editor with Markdown highlighting, a format bar, Edit/Preview switch, table helpers (insert, Tab/Enter navigation, format, auto-escape `|`) and `/` slash commands; your Markdown is saved exactly as typed
+- **Inline Images** - Paste or drop an image and it is uploaded and inserted at the cursor; inline images keep the memo's visibility, are deleted with the memo and are not repeated in the attachment list
+- **Desktop App (PWA)** - Install Memos from the browser to get its own window and Dock icon, a cached app shell for fast launch and an in-app prompt when a new version is deployed (requires HTTPS)
 - **Tag Organization** - Organize memos with tags, pin important tags, add emoji icons
 - **Timeline View** - Browse your memos chronologically with activity heatmap
 - **Multi-platform** - Access from any device via web browser, responsive design for mobile
@@ -103,6 +110,25 @@ docker run -d \
   -e MEMOS_DSN="user:password@tcp(host:3306)/memos" \
   chriscurrycc/memos:latest
 ```
+
+## Writing Memos
+
+- **Format bar** - Appears above the editor while it has focus (always visible in zen mode). Use **Edit / Preview** to check the result; preview uses the same renderer as the timeline.
+- **Slash commands** - Type `/` at the start of a line or after a space to insert headings, lists, quotes, code blocks, tables, math blocks, Mermaid diagrams, dividers, embedded memos or an uploaded image.
+- **Tables** - Insert a table from the format bar, move between cells with `Tab` / `Shift+Tab`, add a row with `Enter` in the last row, align columns with `Cmd/Ctrl+Shift+F`. A `|` typed inside a cell is escaped as `\|` automatically.
+- **Images** - Paste a screenshot or drop an image into the editor to embed it at the cursor as `![](/file/resources/{id}/{filename})`. Removing the image from the text and saving deletes the file. Files added with the attachment button, and non-image files, stay as attachments below the memo.
+- **Shortcuts** - `Cmd/Ctrl+B` / `I` / `K` for bold, italic and link, `Cmd/Ctrl+Enter` to save, `Cmd/Ctrl+Shift+Enter` for zen mode, `#` for tag suggestions and `@` to embed another memo.
+
+## Desktop App (PWA)
+
+Memos can be installed as a standalone app with its own window and Dock / taskbar icon. Your instance must be served over **HTTPS** (or `localhost`).
+
+- **Chrome / Edge** - Open your Memos URL and click the install icon in the address bar (or menu → *Install Memos*).
+- **Safari (macOS Sonoma or later)** - *File → Add to Dock*.
+
+The app shell is cached for fast startup; API requests and uploaded files always come from the server. When you deploy a new version, the app shows a *New version available* prompt instead of reloading on its own.
+
+> Memo content is rendered in the browser from `memo.content`. The `nodes` field and the `ParseMarkdown` / `RestoreMarkdownNodes` / `StringifyMarkdownNodes` RPCs have been removed, so third-party clients that relied on them need to render `content` themselves.
 
 ## Update
 

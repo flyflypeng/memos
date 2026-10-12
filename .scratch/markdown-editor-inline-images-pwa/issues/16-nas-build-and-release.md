@@ -8,15 +8,15 @@
 
 **被阻塞于：** 05、08、11、12、15
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] CHANGELOG.md 与 CHANGELOG_zh.md 已更新；分支使用 `feat/` 前缀（不用 `claude/`、`chriscurry/`），推送到 `origin`，不打 tag
 - [x] 构建机上 `docker build` 成功，标签为 `ghcr.io/flyflypeng/memos:<短提交哈希>`；用临时端口和临时数据目录完成冒烟测试（healthz、manifest、sw.js no-cache、创建 Memo 时不返回 nodes、标签和 hasImage 正确、restore RPC 返回 404）
 - [x] 推送到 ghcr.io（私有）；token 经标准输入传入，使用临时 DOCKER_CONFIG，推送后删除，不进入命令参数和日志
 - [x] 切换前备份 Compose 文件和 `memos_prod.db`；NAS 用只读的 `read:packages` 凭据登录 ghcr.io；用户明确确认后，才把线上服务改为新镜像并重建容器；数据库无需迁移
-- [ ] 通过 HTTPS 验收：Chrome 安装 PWA、独立窗口、标题栏跟随主题、再次部署后出现刷新提示、API 和文件响应不来自 service worker 缓存
-- [ ] Safari「添加到程序坞」的名称和图标正确；中文输入法在 macOS Chrome 和 Safari 中可用；手机上能输入并保存 Memo
-- [ ] 在线上数据中抽查：旧 Memo 的表格、标签、嵌入、内嵌图片显示正确
+- [x] 通过 HTTPS 验收：Chrome 安装 PWA、独立窗口、标题栏跟随主题、再次部署后出现刷新提示、API 和文件响应不来自 service worker 缓存
+- [x] Safari「添加到程序坞」的名称和图标正确；中文输入法在 macOS Chrome 和 Safari 中可用；手机上能输入并保存 Memo
+- [x] 在线上数据中抽查：旧 Memo 的表格、标签、嵌入、内嵌图片显示正确
 - [x] NAS 地址、端口、用户名和凭据都没有写进仓库
 
 参考：`.scratch/markdown-editor-inline-images-pwa/spec.md`、ADR 0001、ADR 0002、`GLOSSARY.md`。
@@ -31,3 +31,4 @@
   - 验证：在 NAS 本机上，healthz 返回 200，manifest 已注入，sw.js 返回 no-cache；经 Caddy 的 8443 端口（ZeroSSL 通配符证书）访问 mem/note 两个域名都返回 200；hermes adapter 在网络内访问 `chriscurrycc_memos:5230/healthz` 正常。
   - ghcr 登录使用临时 `--config` 目录，拉取后已登出并删除该目录。
   - 外网 HTTPS 验收尚未完成：从开发机所在网络访问 `*.u280167.nyat.app:8443` 时，TLS 握手被对端以 unrecognized_name 拒绝。这条链路是 Natfrp 到 Caddy，与本次切换无关，需要用户在自己的网络环境中用浏览器验收。
+- 2026-10-12：用户在浏览器中完成人工验收，确认预期功能均正常。工单关闭。
