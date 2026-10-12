@@ -32,3 +32,7 @@
   - ghcr 登录使用临时 `--config` 目录，拉取后已登出并删除该目录。
   - 外网 HTTPS 验收尚未完成：从开发机所在网络访问 `*.u280167.nyat.app:8443` 时，TLS 握手被对端以 unrecognized_name 拒绝。这条链路是 Natfrp 到 Caddy，与本次切换无关，需要用户在自己的网络环境中用浏览器验收。
 - 2026-10-12：用户在浏览器中完成人工验收，确认预期功能均正常。工单关闭。
+- 2026-10-12：修复标题字号（H1–H4 改为 24/20/18/16px），提交 `3df9260`。镜像 `ghcr.io/flyflypeng/memos:3df9260`（`feat-markdown-editor` 标签已移到这个镜像），digest `sha256:4218d46ed754d924c4873a0050f63b80ae9bb54877b0e2caa78c72cd3b9c3a5a`，在构建机上构建并完成冒烟测试。NAS 已按上一条记录中的同一组 `docker run` 参数重建容器。
+  - 停服后把 db 备份到 `backup-20261012-124147/`；上一版本的容器重命名为 `chriscurrycc_memos_prev_06c5c50`，处于停止状态，restart 为 no。
+  - 回滚：`docker stop chriscurrycc_memos && docker rm chriscurrycc_memos && docker rename chriscurrycc_memos_prev_06c5c50 chriscurrycc_memos && docker update --restart=always chriscurrycc_memos && docker start chriscurrycc_memos`。改名后的容器仍保留 `personal-workflow_hermes` 网络和别名。
+  - 验证：healthz 返回 200；hermes adapter 在网络内访问返回 200；经 Caddy 访问 mem 域名返回 200；线上前端 bundle 含新的标题 class，不再含旧 class（note 域名指向思源笔记，与本次部署无关）。
