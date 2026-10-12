@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import useLocalStorage from "react-use/lib/useLocalStorage";
 import MemoContent from "@/components/MemoContent";
-import { excludeReferencedResources, extractResourceReferences } from "@/components/MemoContent/markdown/resourceReferences";
+import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import { memoServiceClient } from "@/grpcweb";
@@ -43,7 +43,14 @@ import FormatBar from "./FormatBar";
 import RelationListView from "./RelationListView";
 import ResourceListView from "./ResourceListView";
 import ZenModeEditorDialog from "./ZenModeEditorDialog";
-import { ReconcileInput, ReconcileOutput, cancelCleanup, reconcileResources } from "./reconcileResources";
+import {
+  ReconcileInput,
+  ReconcileOutput,
+  cancelCleanup,
+  confirmUnused,
+  hasUnresolvedReferences,
+  reconcileResources,
+} from "./reconcileResources";
 import { MemoEditorContext } from "./types";
 
 export interface Props {
@@ -173,9 +180,12 @@ const MemoEditor = (props: Props) => {
     }
   };
 
+  // The zen editor saved the Memo, so everything this editor held for it now belongs to that Memo.
   const handleZenModeConfirm = (memoName: string) => {
     editorRef.current?.setContent("");
     localStorage.removeItem(contentCacheKey);
+    sessionUploadsRef.current = [];
+    setState((prevState) => ({ ...prevState, resourceList: [], relationList: [], location: undefined }));
     onConfirm?.(memoName);
   };
 
@@ -377,27 +387,26 @@ const MemoEditor = (props: Props) => {
   // the content references one this session doesn't know, e.g. an image in a draft from before a
   // refresh; resources of other users are never resolved, so they are never linked.
   const reconcileForSave = async (content: string): Promise<ReconcileOutput> => {
-    const origin = window.location.origin;
     const input: ReconcileInput = {
       original: originalRef.current,
       current: { content, attachments: state.resourceList },
       uploadedThisSession: sessionUploadsRef.current,
       knownResources: [],
-      origin,
+      origin: window.location.origin,
     };
-    const references = extractResourceReferences(content, origin);
-    const known = [...input.original.resources, ...input.uploadedThisSession, ...input.current.attachments];
-    const unresolved =
-      [...references.names].some((name) => !known.some((resource) => resource.name === name)) ||
-      [...references.uids].some((uid) => !known.some((resource) => resource.uid === uid));
-    if (unresolved) {
+    if (hasUnresolvedReferences(input)) {
       input.knownResources = await resourceStore.fetchResources();
     }
     return reconcileResources(input);
   };
 
   // Best effort: a resource that fails to delete stays under "Unused resources" for manual cleanup.
-  const deleteResources = async (resources: Resource[]) => {
+  // The candidates are re-checked against the server first, so one a Memo owns by now is kept; if
+  // the check fails, nothing is deleted.
+  const deleteUnusedResources = async (candidates: Resource[]) => {
+    if (candidates.length === 0) return;
+    const latest = await resourceStore.fetchResources().catch((): Resource[] => []);
+    const resources = confirmUnused(candidates, latest);
     await Promise.allSettled(resources.map((resource) => resourceStore.deleteResource(resource.name)));
   };
 
@@ -476,7 +485,7 @@ const MemoEditor = (props: Props) => {
         }
       }
       // Only after the Memo is saved: a failed save must not lose the uploads.
-      void deleteResources(deleteUnused);
+      void deleteUnusedResources(deleteUnused);
       editorRef.current?.setContent("");
       sessionUploadsRef.current = [];
     } catch (error: any) {
@@ -501,7 +510,7 @@ const MemoEditor = (props: Props) => {
     // Editing an existing Memo has no draft to come back to, so its unowned uploads are dropped. A
     // new Memo's draft keeps its images; after a refresh they show under "Unused resources".
     if (memoName) {
-      void deleteResources(cancelCleanup(sessionUploadsRef.current));
+      void deleteUnusedResources(cancelCleanup(sessionUploadsRef.current));
       sessionUploadsRef.current = [];
     }
 

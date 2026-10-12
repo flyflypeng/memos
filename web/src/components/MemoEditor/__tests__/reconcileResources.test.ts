@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { excludeReferencedResources } from "@/components/MemoContent/markdown/resourceReferences";
 import { Resource } from "@/types/proto/api/v1/resource_service";
-import { ReconcileInput, cancelCleanup, reconcileResources } from "../reconcileResources";
+import { ReconcileInput, cancelCleanup, confirmUnused, hasUnresolvedReferences, reconcileResources } from "../reconcileResources";
 
 const ORIGIN = "http://localhost:3000";
 
@@ -165,5 +165,48 @@ describe("cancelCleanup", () => {
   it("deletes this session's uploads that still belong to no memo", () => {
     const uploads = [resource(1), resource(2, { memo: "memos/1" })];
     expect(cancelCleanup(uploads).map((r) => r.name)).toEqual(["resources/1"]);
+  });
+});
+
+describe("confirmUnused: re-checks deletion candidates against the latest resources", () => {
+  it("keeps a candidate that is still unused", () => {
+    expect(confirmUnused([resource(1)], [resource(1)]).map((r) => r.name)).toEqual(["resources/1"]);
+  });
+
+  it("never deletes a candidate a memo now owns (saved from another editor, e.g. zen mode)", () => {
+    const stale = resource(1);
+    const latest = [resource(1, { memo: "memos/7" })];
+    expect(confirmUnused([stale], latest)).toEqual([]);
+  });
+
+  it("skips a candidate that no longer exists", () => {
+    expect(confirmUnused([resource(1)], [])).toEqual([]);
+  });
+
+  it("applies to the cancel cleanup set too", () => {
+    const uploads = [resource(1), resource(2)];
+    const latest = [resource(1, { memo: "memos/3" }), resource(2)];
+    expect(confirmUnused(cancelCleanup(uploads), latest).map((r) => r.name)).toEqual(["resources/2"]);
+  });
+});
+
+describe("hasUnresolvedReferences: when the user's resource list must be fetched", () => {
+  const input = (content: string, uploadedThisSession: Resource[] = []) => ({
+    original: { content: "", resources: [] },
+    current: { content, attachments: [] },
+    uploadedThisSession,
+    origin: ORIGIN,
+  });
+
+  it("is false when every reference is one of this session's uploads", () => {
+    expect(hasUnresolvedReferences(input("![](/file/resources/1/img1.png)", [resource(1)]))).toBe(false);
+  });
+
+  it("is true for a URL reference the session does not know", () => {
+    expect(hasUnresolvedReferences(input("![](/file/resources/9/x.png)", [resource(1)]))).toBe(true);
+  });
+
+  it("is true for an unknown ![[resources/uid]] embed", () => {
+    expect(hasUnresolvedReferences(input("![[resources/other]]"))).toBe(true);
   });
 });

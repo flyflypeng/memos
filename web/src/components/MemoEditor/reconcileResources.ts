@@ -49,5 +49,26 @@ export const reconcileResources = (input: ReconcileInput): ReconcileOutput => {
   return { linkToMemo, deleteUnused };
 };
 
+// Whether `current.content` references a resource that none of the editor's own pools (the Memo's
+// resources, this session's uploads, the attachments) knows, e.g. an image in a draft from before a
+// refresh. Only then does the caller need to supply `knownResources`.
+export const hasUnresolvedReferences = (input: Omit<ReconcileInput, "knownResources">): boolean => {
+  const references = extractResourceReferences(input.current.content, input.origin);
+  const known = [...input.original.resources, ...input.uploadedThisSession, ...input.current.attachments];
+  return (
+    [...references.names].some((name) => !known.some((resource) => resource.name === name)) ||
+    [...references.uids].some((uid) => !known.some((resource) => resource.uid === uid))
+  );
+};
+
 // Cancelling an edit of an existing Memo: the uploads of this session that still belong to no Memo.
 export const cancelCleanup = (uploadedThisSession: Resource[]): Resource[] => uploadedThisSession.filter((resource) => !resource.memo);
+
+// The deletion candidates that are still unused resources according to `latest` (the user's
+// resources as the server lists them now). The editor's copies can be stale: another editor (zen
+// mode) may have saved them into a Memo since. A candidate that a Memo owns or that no longer exists
+// is never deleted.
+export const confirmUnused = (candidates: Resource[], latest: Resource[]): Resource[] => {
+  const unusedNames = new Set(latest.filter((resource) => !resource.memo).map((resource) => resource.name));
+  return candidates.filter((resource) => unusedNames.has(resource.name));
+};
