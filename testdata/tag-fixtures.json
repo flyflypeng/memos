@@ -14,5 +14,20 @@
   {"name": "consecutive tags", "content": "#a #b #c", "tags": ["a", "b", "c"]},
   {"name": "adjacent tags without space", "content": "#one#two", "tags": ["one", "two"]},
   {"name": "duplicate tags", "content": "#dup and #dup", "tags": ["dup"]},
-  {"name": "lone hash", "content": "price # 5", "tags": []}
+  {"name": "lone hash", "content": "price # 5", "tags": []},
+  {"name": "hash in bold", "content": "**a #b**", "tags": []},
+  {"name": "tag-only bold", "content": "**#重要** 事项", "tags": []},
+  {"name": "underscores are not bold in gomark; the tag runs into them", "content": "__a #b__", "tags": ["b__"]},
+  {"name": "hash in italic", "content": "*i #j*", "tags": []},
+  {"name": "underscores are not italic in gomark; the tag runs into them", "content": "_i #j_", "tags": ["j_"]},
+  {"name": "hash in bold italic", "content": "***bi #k***", "tags": []},
+  {"name": "hash in strikethrough", "content": "~~s #t~~", "tags": []},
+  {"name": "hash in highlight", "content": "==x #y==", "tags": []},
+  {"name": "hash in spoiler", "content": "||p #q||", "tags": []},
+  {"name": "hash in superscript", "content": "x^#s^", "tags": []},
+  {"name": "hash in subscript", "content": "x~#u~", "tags": []},
+  {"name": "tag next to bold", "content": "**bold** #after", "tags": ["after"]},
+  {"name": "hash in link text", "content": "[see #x](https://example.com)", "tags": []},
+  {"name": "tag inside underscores, not at the end", "content": "_x #y z_", "tags": ["y"]},
+  {"name": "underscore italic next to a tag", "content": "_plain_ #after", "tags": ["after"]}
 ]

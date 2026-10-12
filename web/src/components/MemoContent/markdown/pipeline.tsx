@@ -67,9 +67,11 @@ const markdownProcessor = unified()
   .use(remarkTaskMarkerOffset)
   .use(memoMarkdownPlugins.flatMap((plugin) => plugin.remarkPlugins ?? []));
 
-// parseMemoMarkdown parses Memo content into the mdast tree the renderer works from.
+// parseMemoMarkdown parses Memo content into the mdast tree the renderer works from. The content is
+// also the transformers' file, for plugins that need the source text.
 // The plugin list is a `PluggableList`, which erases the tree type; remark transforms keep a Root.
-export const parseMemoMarkdown = (content: string) => markdownProcessor.runSync(markdownProcessor.parse(content)) as MdastRoot;
+export const parseMemoMarkdown = (content: string) =>
+  markdownProcessor.runSync(markdownProcessor.parse(content), content) as MdastRoot;
 
 const htmlProcessor = unified()
   .use(remarkRehype, {

@@ -34,11 +34,17 @@ describe("MemoContent from Memo content: tag click", () => {
 });
 
 describe("MemoContent from Memo content: inline marks", () => {
-  it("renders ==x== as a highlight that may contain a tag", () => {
+  it("renders ==x== as a highlight whose #text stays text, as gomark has no tags in marks", () => {
     const { container } = renderMemo("a ==big #news== b");
     const mark = container.querySelector("mark");
     expect(mark?.textContent).toBe("big #news");
-    expect(mark?.querySelector("[data-memo-tag]")?.getAttribute("data-memo-tag")).toBe("news");
+    expect(container.querySelector("[data-memo-tag]")).toBeNull();
+  });
+
+  it("still renders underscore emphasis without a # as emphasis", () => {
+    const { container } = renderMemo("_soft_ and __loud__");
+    expect(container.querySelector("em")?.textContent).toBe("soft");
+    expect(container.querySelector("strong")?.textContent).toBe("loud");
   });
 
   it("renders ||x|| as a spoiler that reveals on click", () => {

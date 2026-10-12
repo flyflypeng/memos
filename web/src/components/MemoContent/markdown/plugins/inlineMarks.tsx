@@ -1,4 +1,5 @@
-import type { Parent, PhrasingContent, Root, Text } from "mdast";
+import type { Parent, PhrasingContent, Root, RootContent, Text } from "mdast";
+import { EXIT, visit } from "unist-util-visit";
 import type { ReactNode } from "react";
 import Highlight from "../../Highlight";
 import Spoiler from "../../Spoiler";
@@ -19,8 +20,9 @@ const MARKS: { open: string; name: string }[] = [
 const TAG_END = /[ \n#\\]/;
 
 // Splits one text value into text and MemosElement nodes following gomark's single-line rules:
-// marks pair within the text, never across lines, with non-empty raw content; highlights may contain tags.
-export const splitInlineMarks = (value: string, marks = MARKS): PhrasingContent[] => {
+// marks pair within the text, never across lines, with non-empty raw content. A mark's content is
+// plain text: gomark finds no tags inside marks.
+const splitInlineMarks = (value: string): PhrasingContent[] => {
   const out: PhrasingContent[] = [];
   let text = "";
   let i = 0;
@@ -29,14 +31,13 @@ export const splitInlineMarks = (value: string, marks = MARKS): PhrasingContent[
     text = "";
   };
   scan: while (i < value.length) {
-    for (const { open, name } of marks) {
+    for (const { open, name } of MARKS) {
       if (!value.startsWith(open, i)) continue;
       const close = value.indexOf(open, i + open.length);
       const content = close < 0 ? "" : value.slice(i + open.length, close);
       if (!content || content.includes("\n")) continue;
       flush();
-      const children: PhrasingContent[] = name === "highlight" ? splitInlineMarks(content, []) : [{ type: "text", value: content }];
-      out.push(memosElement(name, {}, { children }));
+      out.push(memosElement(name, {}, { children: [{ type: "text", value: content }] }));
       i = close + open.length;
       continue scan;
     }
@@ -56,6 +57,8 @@ export const splitInlineMarks = (value: string, marks = MARKS): PhrasingContent[
   return out;
 };
 
+// Nodes whose text never holds tags. gomark parses bold, italic and strikethrough content as plain
+// text (bold allows only links), so `**a #b**` has no tag on the server either.
 const SKIP: Record<string, true> = {
   link: true,
   linkReference: true,
@@ -64,21 +67,62 @@ const SKIP: Record<string, true> = {
   math: true,
   inlineMath: true,
   memosElement: true,
+  strong: true,
+  emphasis: true,
+  delete: true,
 };
 
-const transform = (node: Parent) => {
+const hasHash = (node: RootContent) => {
+  let found = false;
+  visit(node, "text", (text) => {
+    if (!text.value.includes("#")) return;
+    found = true;
+    return EXIT;
+  });
+  return found;
+};
+
+// gomark has no underscore emphasis: `_x_` and `__x__` are plain text there, so a tag runs into the
+// closing underscores (`_i #j_` is the tag `j_`). Underscore emphasis holding a `#` is turned back
+// into its text, so its tags are the server's; other underscore emphasis still renders.
+const isUnderscoreEmphasisWithHash = (node: RootContent, source: string) =>
+  (node.type === "strong" || node.type === "emphasis") && source[node.position?.start.offset ?? -1] === "_" && hasHash(node);
+
+const unwrapUnderscoreEmphasis = (node: Parent, source: string) => {
+  if (!node.children.some((child) => isUnderscoreEmphasisWithHash(child, source))) return;
+  const children: RootContent[] = [];
+  const append = (child: RootContent) => {
+    const last = children[children.length - 1];
+    if (child.type === "text" && last?.type === "text") children[children.length - 1] = { type: "text", value: last.value + child.value };
+    else children.push(child);
+  };
+  for (const child of node.children) {
+    if (!isUnderscoreEmphasisWithHash(child, source)) {
+      append(child);
+      continue;
+    }
+    const marker = child.type === "strong" ? "__" : "_";
+    unwrapUnderscoreEmphasis(child as Parent, source);
+    [{ type: "text", value: marker } as Text, ...(child as Parent).children, { type: "text", value: marker } as Text].forEach(append);
+  }
+  node.children = children as typeof node.children;
+};
+
+const transform = (node: Parent, source: string) => {
+  unwrapUnderscoreEmphasis(node, source);
   for (let index = node.children.length - 1; index >= 0; index--) {
     const child = node.children[index];
     if (child.type === "text") {
       const parts = splitInlineMarks((child as Text).value);
       if (parts.length !== 1 || parts[0].type !== "text") node.children.splice(index, 1, ...(parts as typeof node.children));
     } else if (!SKIP[child.type] && "children" in child) {
-      transform(child as Parent);
+      transform(child as Parent, source);
     }
   }
 };
 
-const remarkInlineMarks = () => (tree: Root) => transform(tree);
+// The source decides an emphasis's delimiter, which mdast does not record.
+const remarkInlineMarks = () => (tree: Root, file: { value: unknown }) => transform(tree, String(file.value ?? ""));
 
 export default {
   remarkPlugins: [remarkInlineMarks],
