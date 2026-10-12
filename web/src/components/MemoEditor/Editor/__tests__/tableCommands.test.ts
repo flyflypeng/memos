@@ -1,22 +1,12 @@
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { syntaxTree } from "@codemirror/language";
-import { EditorSelection, EditorState, StateCommand } from "@codemirror/state";
+import { EditorState, StateCommand } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
+import { createEditorState, showEditorState } from "@/test/editorState";
 import { displayWidth, escapePipeSpec, formatTable, insertTable, nextCell, previousCell, tableNewRow } from "../tableCommands";
 
-// `^` marks the cursor; without it, `<` … `>` mark the selection. (`|` is table syntax here.)
-const create = (marked: string) => {
-  const cursor = marked.indexOf("^");
-  const doc = cursor >= 0 ? marked.replace("^", "") : marked.replace("<", "").replace(">", "");
-  const selection = cursor >= 0 ? EditorSelection.single(cursor) : EditorSelection.single(marked.indexOf("<"), marked.indexOf(">") - 1);
-  return EditorState.create({ doc, selection, extensions: [markdown({ base: markdownLanguage })] });
-};
-
-const show = (state: EditorState) => {
-  const { from, to } = state.selection.main;
-  const doc = state.doc.toString();
-  return from === to ? doc.slice(0, from) + "^" + doc.slice(from) : doc.slice(0, from) + "<" + doc.slice(from, to) + ">" + doc.slice(to);
-};
+// `^` marks the cursor, as `|` is table syntax here.
+const create = (marked: string) => createEditorState(marked, { cursor: "^" });
+const show = (state: EditorState) => showEditorState(state, { cursor: "^" });
 
 const run = (command: StateCommand, marked: string) => {
   let state = create(marked);

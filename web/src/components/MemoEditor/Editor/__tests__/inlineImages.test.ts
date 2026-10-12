@@ -1,4 +1,5 @@
-import { EditorSelection, EditorState, TransactionSpec } from "@codemirror/state";
+import { EditorState, TransactionSpec } from "@codemirror/state";
+import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import { describe, expect, it } from "vitest";
 import {
   classifyTransfer,
@@ -55,20 +56,6 @@ describe("pastedImageFilename", () => {
     expect(pastedImageFilename(file(name, type), now)).toBe(expected);
   });
 });
-
-// `|` marks the cursor; `<` … `>` mark the selection.
-const create = (marked: string) => {
-  const cursor = marked.indexOf("|");
-  const doc = cursor >= 0 ? marked.replace("|", "") : marked.replace("<", "").replace(">", "");
-  const selection = cursor >= 0 ? EditorSelection.single(cursor) : EditorSelection.single(marked.indexOf("<"), marked.indexOf(">") - 1);
-  return EditorState.create({ doc, selection });
-};
-
-const show = (state: EditorState) => {
-  const { from, to } = state.selection.main;
-  const doc = state.doc.toString();
-  return from === to ? doc.slice(0, from) + "|" + doc.slice(from) : doc.slice(0, from) + "<" + doc.slice(from, to) + ">" + doc.slice(to);
-};
 
 const apply = (state: EditorState, specs: TransactionSpec | TransactionSpec[] | null) => {
   expect(specs).not.toBeNull();

@@ -1,9 +1,9 @@
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { history, undo } from "@codemirror/commands";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { describe, expect, it } from "vitest";
+import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import { tableSkeleton } from "../commands";
 import {
   applySlashBlock,
@@ -15,16 +15,6 @@ import {
   slashCompletionSource,
   slashTriggerAt,
 } from "../slashCommands";
-
-// `|` marks the cursor.
-const create = (marked: string) => {
-  const cursor = marked.indexOf("|");
-  return EditorState.create({
-    doc: marked.replace("|", ""),
-    selection: EditorSelection.single(cursor),
-    extensions: [markdown({ base: markdownLanguage })],
-  });
-};
 
 const trigger = (marked: string) => {
   const state = create(marked);
@@ -61,12 +51,6 @@ describe("slash trigger", () => {
     expect(trigger(input)).toBeNull();
   });
 });
-
-const show = (state: EditorState) => {
-  const { head } = state.selection.main;
-  const doc = state.doc.toString();
-  return doc.slice(0, head) + "|" + doc.slice(head);
-};
 
 // Picks block `id` from the menu opened by the `/query` before the cursor.
 const pick = (id: SlashBlockId, marked: string) => {

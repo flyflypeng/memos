@@ -1,6 +1,5 @@
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { EditorSelection, EditorState, StateCommand } from "@codemirror/state";
+import { EditorSelection, StateCommand } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 import {
   continueMarkup,
@@ -12,21 +11,8 @@ import {
   toggleLinePrefix,
   toggleWrap,
 } from "../commands";
+import { createEditorState as create, showEditorState as show } from "@/test/editorState";
 import { memoCompletionSource, tagCompletionSource } from "../completions";
-
-// `|` marks the cursor; without it, `<` … `>` mark the selection.
-const create = (marked: string) => {
-  const cursor = marked.indexOf("|");
-  const doc = cursor >= 0 ? marked.replace("|", "") : marked.replace("<", "").replace(">", "");
-  const selection = cursor >= 0 ? EditorSelection.single(cursor) : EditorSelection.single(marked.indexOf("<"), marked.indexOf(">") - 1);
-  return EditorState.create({ doc, selection, extensions: [markdown({ base: markdownLanguage })] });
-};
-
-const show = (state: EditorState) => {
-  const { from, to } = state.selection.main;
-  const doc = state.doc.toString();
-  return from === to ? doc.slice(0, from) + "|" + doc.slice(from) : doc.slice(0, from) + "<" + doc.slice(from, to) + ">" + doc.slice(to);
-};
 
 const run = (command: StateCommand, marked: string) => {
   let state = create(marked);
