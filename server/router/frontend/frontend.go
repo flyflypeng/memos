@@ -58,7 +58,6 @@ func (*FrontendService) Serve(_ context.Context, e *echo.Echo) {
 // noCachePaths must always be revalidated so browsers detect new PWA releases.
 var noCachePaths = map[string]bool{
 	"/sw.js":                true,
-	"/registerSW.js":        true,
 	"/manifest.webmanifest": true,
 }
 
