@@ -15,6 +15,8 @@ All notable changes to this fork compared to the original [usememos/memos v0.23.
 
 ### Fixes
 - Memo headings are scaled to the 14px body text (H1–H4: 24/20/18/16px) instead of 48/30/20/18px, and their weight now decreases by level
+- Mermaid diagrams no longer sit on the dark code-block background, so labels and arrows are readable; diagrams follow the app's light/dark theme
+- Default memo content limit doubled from 8 KiB to 16 KiB (16384 bytes); a stored limit below that is raised to it
 
 ### Breaking changes
 - `Memo.nodes` and the `ParseMarkdown`, `RestoreMarkdownNodes` and `StringifyMarkdownNodes` RPCs are removed; clients that render `nodes` must parse `content` instead

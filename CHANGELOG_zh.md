@@ -15,6 +15,8 @@
 
 ### 修复
 - Memo 标题字号按 14px 正文重新调整（H1–H4：24/20/18/16px，原为 48/30/20/18px），字重也改为随级别递减
+- Mermaid 图表不再放在深色代码块背景上，文字和箭头可以看清；图表配色跟随应用的浅色或深色主题
+- 单条 Memo 内容的默认上限从 8 KiB 提高到 16 KiB（16384 字节）；已保存的上限低于这个值时，按 16 KiB 生效
 
 ### 不兼容变更
 - 移除 `Memo.nodes` 字段，以及 `ParseMarkdown`、`RestoreMarkdownNodes`、`StringifyMarkdownNodes` 三个 RPC；依赖 `nodes` 渲染的客户端需要改为解析 `content`

@@ -139,8 +139,8 @@ func (s *Store) GetWorkspaceGeneralSetting(ctx context.Context) (*storepb.Worksp
 	return workspaceGeneralSetting, nil
 }
 
-// DefaultContentLengthLimit is the default limit of content length in bytes. 8KB.
-const DefaultContentLengthLimit = 8 * 1024
+// DefaultContentLengthLimit is the default limit of content length in bytes. 16KB.
+const DefaultContentLengthLimit = 16 * 1024
 
 // DefaultReactions is the default reactions for memo related setting.
 var DefaultReactions = []string{"👍", "👎", "❤️", "🎉", "😄", "😕", "😢", "😡"}
