@@ -36,3 +36,8 @@
   - 停服后把 db 备份到 `backup-20261012-124147/`；上一版本的容器重命名为 `chriscurrycc_memos_prev_06c5c50`，处于停止状态，restart 为 no。
   - 回滚：`docker stop chriscurrycc_memos && docker rm chriscurrycc_memos && docker rename chriscurrycc_memos_prev_06c5c50 chriscurrycc_memos && docker update --restart=always chriscurrycc_memos && docker start chriscurrycc_memos`。改名后的容器仍保留 `personal-workflow_hermes` 网络和别名。
   - 验证：healthz 返回 200；hermes adapter 在网络内访问返回 200；经 Caddy 访问 mem 域名返回 200；线上前端 bundle 含新的标题 class，不再含旧 class（note 域名指向思源笔记，与本次部署无关）。
+- 2026-10-20：修复 Mermaid 图表在深色 prose 代码块背景上看不清的问题；图表主题改为跟随应用的浅色或深色模式。单条 Memo 内容的默认上限从 8 KiB 改为 16 KiB。提交 `91458bc`，镜像 `ghcr.io/flyflypeng/memos:91458bc`（`feat-markdown-editor` 标签已移到这个镜像），digest `sha256:28fb6fc48c5cf729f8ae01b681555012b4584793f7d4c228bf7eb30b593c917d`。
+  - 冒烟测试：12000 字节的 Memo 返回 200；16500 字节的 Memo 返回 400，提示 max 16384。
+  - NAS 上 `system_setting` 保存的 `contentLengthLimit` 仍是 8192。它低于新的默认值，所以读取时按 16384 生效，数据库没有改动。线上接口实际返回 16384。
+  - 停服后把 db 备份到 `backup-20261020-130625/`。上一版本的容器重命名为 `chriscurrycc_memos_prev_3df9260`，处于停止状态。回滚方法同上一条记录，只是把容器名换成这个。
+  - 验证：healthz 返回 200；hermes adapter 访问返回 200；经 Caddy 访问 mem 域名返回 200。
